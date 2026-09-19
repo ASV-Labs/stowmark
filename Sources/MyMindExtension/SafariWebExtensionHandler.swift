@@ -22,6 +22,10 @@ final class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
         let action = message["action"] as? String ?? "savePage"
         let requestID = UUID(uuidString: message["requestId"] as? String ?? "") ?? UUID()
 
+        if action == "getSettings" {
+            return ["safariToolbarClickSaves": Self.toolbarClickSavesImmediately()]
+        }
+
         if action == "openApp" {
             openApp()
             return ["status": "opened", "message": "Opening My Mind."]
@@ -155,6 +159,24 @@ final class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
         if let url = components?.url {
             NSWorkspace.shared.open(url)
         }
+    }
+
+    /// `handoff/capture-settings.json`, same shape `SafariSupport` writes.
+    private static func toolbarClickSavesImmediately() -> Bool {
+        struct ToolbarSettings: Decodable {
+            var safariToolbarClickSaves: Bool
+        }
+        var roots: [URL] = []
+        if let shared = StorageLocator.sharedRoot() { roots.append(shared) }
+        if let support = try? StorageLocator.appSupportRoot() { roots.append(support) }
+        let decoder = JSONDecoder()
+        for root in roots {
+            let url = StorageLocator.handoffDirectory(in: root).appendingPathComponent("capture-settings.json")
+            guard let data = try? Data(contentsOf: url),
+                  let settings = try? decoder.decode(ToolbarSettings.self, from: data) else { continue }
+            return settings.safariToolbarClickSaves
+        }
+        return false
     }
 
     private func encode(_ result: CaptureResult, requestID: UUID) -> [String: Any] {

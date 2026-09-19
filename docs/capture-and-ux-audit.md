@@ -162,7 +162,7 @@ Status: done · Priority: P2 · Files: `LibraryStore+Records.insertFile`, `Thumb
 ### Phase 1 — Make saving easier than copy & paste
 
 #### B-01 Safari: keyboard shortcut, badge, one-click mode, image bytes
-Status: partial (shortcut, badge, image bytes; one-click mode still todo) · Priority: P0 · Files: `SafariExtension/Resources/extension-manifest.json`, `background.js`, `popup.js`, `SafariWebExtensionHandler.swift`, `SettingsView.swift`
+Status: done · Priority: P0 · Files: `SafariExtension/Resources/extension-manifest.json`, `background.js`, `popup.js`, `SafariWebExtensionHandler.swift`, `SettingsView.swift`
 - Manifest: add `"commands": { "save-page": { "suggested_key": { "default": "Ctrl+Shift+S", "mac": "Command+Shift+S" }, "description": "Save page to My Mind" } }`. In `background.js`, `browser.commands.onCommand` → `native({action:"savePage",…})` then `browser.action.setBadgeText({text:"✓", tabId})` for 3 s (or "…" while pending, "!" on failure).
 - Setting "Safari toolbar click saves immediately (no popup)": store in the group container as `settings` row; `background.js` reads via a `getSettings` native message on startup; when true, set `action.default_popup` to none via `browser.action.setPopup({popup:""})` and handle `browser.action.onClicked` → save + badge. Popup remains reachable via right-click → "Save with details…" context item.
 - Image bytes: for `contexts:["image"]`, fetch `info.srcUrl` **in the extension** (`fetch(srcUrl)` inherits page cookies/referrer), base64 the bytes (cap `Limits.maxAttachmentBytes`), send `{action:"saveImage", bytes, filename, pageURL}`; handler decodes and builds a `CaptureRequest(.image, file:)`. Rename menu item to "Save image to My Mind"; keep "Save image link" as a second item.
@@ -175,12 +175,12 @@ Status: todo · Priority: P0 · Files: new target `Sources/MyMindShare/ShareView
 - Accept: Share from Safari, Chrome, Preview (image), Finder (PDF), and Notes (text) → correct kind and retention each time, with app closed; duplicate share → "Already in your library."
 
 #### B-03 Services menu: "Save to My Mind"
-Status: todo · Priority: P1 · Files: `App/Info.plist` (`NSServices`), `MyMindApp.swift` (`NSApp.servicesProvider`), new `ServicesProvider.swift`
+Status: done · Priority: P1 · Files: `App/Info.plist` (`NSServices`), `MyMindApp.swift` (`NSApp.servicesProvider`), new `ServicesProvider.swift`
 - Two services: text/URL selection → `saveSelection:userData:error:` (URL → link; other text → excerpt, source unknown → store as excerpt with `On this Mac` source and a "no source" warning). `NSSendTypes: public.utf8-plain-text, public.url`.
 - Accept: select a URL in Mail → right-click → Services → Save to My Mind → item saved; works when app is not running (LaunchServices starts it).
 
 #### B-04 Drop onto the Dock icon
-Status: todo · Priority: P1 · Files: `App/Info.plist` `CFBundleDocumentTypes` (public.image, com.adobe.pdf, public.url, com.apple.web-internet-location), `MyMindApp.swift` (`.onOpenURL` already exists; add `NSApplicationDelegateAdaptor` `application(_:open:)`)
+Status: done · Priority: P1 · Files: `App/Info.plist` `CFBundleDocumentTypes` (public.image, com.adobe.pdf, public.url, com.apple.web-internet-location), `MyMindApp.swift` (`.onOpenURL` already exists; add `NSApplicationDelegateAdaptor` `application(_:open:)`)
 - Accept: drag a `.webloc`, a PNG, and a PDF onto the Dock icon → three items.
 
 #### B-05 Quick-capture: menu bar extra + global hotkey
@@ -195,11 +195,11 @@ Status: todo · Priority: P2 · Files: `LibraryModel.swift` (`NSPasteboard.gener
 - Accept: copy a URL in any app → banner appears in My Mind → ⏎ saves; copying the same URL again does nothing.
 
 #### B-07 App Intent: "Save to My Mind"
-Status: todo · Priority: P2 · Files: new `Sources/MyMind/SaveIntent.swift` (`AppIntent` with `@Parameter url: URL`, optional `shelf`, `tags`, `note`; `AppShortcutsProvider`)
+Status: done · Priority: P2 · Files: new `Sources/MyMind/SaveIntent.swift` (`AppIntent` with `@Parameter url: URL`, optional `shelf`, `tags`, `note`; `AppShortcutsProvider`)
 - Accept: Shortcuts → "Save to My Mind" with a URL → item saved; Spotlight "Save to My Mind" appears.
 
 #### B-08 Other browsers via URL scheme + bookmarklet surface
-Status: todo · Priority: P2 · Files: `SettingsView.swift` (Capture tab → "Other browsers"), new `BrowserExtension/chrome/` (MV3: `manifest.json`, `background.js` with `chrome.action.onClicked` → `chrome.tabs.create({url:"mymind://save?…"})` then close the tab, `commands` shortcut, context menus)
+Status: partial (Settings shows bookmarklets and `mymind://save`; no Chrome extension in this slice) · Priority: P2 · Files: `SettingsView.swift` (Capture tab → "Other browsers"), new `BrowserExtension/chrome/` (MV3: `manifest.json`, `background.js` with `chrome.action.onClicked` → `chrome.tabs.create({url:"mymind://save?…"})` then close the tab, `commands` shortcut, context menus)
 - Settings shows: two bookmarklets (copyable, with a "drag this to your bookmarks bar" link), and a "Load unpacked extension" folder path for Chrome/Arc/Edge/Brave. The app shows a toast + badge when a `mymind://save` arrives so the user gets confirmation somewhere.
 - Accept: Chrome bookmarklet → item saved, app toast; unpacked extension ⌘⇧S → same; duplicate → "Already in your library."
 

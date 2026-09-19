@@ -6,6 +6,8 @@ struct SettingsView: View {
     @Bindable var model: LibraryModel
     @Environment(\.colorScheme) private var scheme
     @State private var status: String?
+    @State private var safariExtensionState = "Not found"
+    @State private var toolbarClickSaves = SafariSupport.toolbarClickSavesImmediately
 
     var body: some View {
         TabView {
@@ -146,8 +148,48 @@ struct SettingsView: View {
             .formStyle(.grouped)
             .padding()
             .tabItem { Label("Library", systemImage: "books.vertical") }
+
+            Form {
+                Section("Safari") {
+                    LabeledContent("Extension") {
+                        Text(safariExtensionState)
+                    }
+                    Toggle("Safari toolbar click saves immediately", isOn: $toolbarClickSaves)
+                        .onChange(of: toolbarClickSaves) { _, enabled in
+                            SafariSupport.setToolbarClickSavesImmediately(enabled)
+                        }
+                    Text("On, the toolbar button saves the page. Off, it opens the popup. Right-click menus stay.")
+                        .font(.caption)
+                        .foregroundStyle(Theme.secondary(scheme))
+                }
+                Section("Bookmarklets") {
+                    Text("Save this page")
+                        .font(.callout)
+                    Text(LibraryModel.safariPageBookmarklet)
+                        .font(.caption.monospaced())
+                        .textSelection(.enabled)
+                    Text("Save the selection")
+                        .font(.callout)
+                    Text(LibraryModel.safariExcerptBookmarklet)
+                        .font(.caption.monospaced())
+                        .textSelection(.enabled)
+                }
+                Section("Other browsers") {
+                    Text("Chrome and Arc can use mymind://save.")
+                        .font(.callout)
+                    Text("Share and Services land in a later or parallel slice.")
+                        .font(.callout)
+                        .foregroundStyle(Theme.secondary(scheme))
+                }
+            }
+            .formStyle(.grouped)
+            .padding()
+            .task {
+                safariExtensionState = await SafariSupport.extensionStateLabel()
+            }
+            .tabItem { Label("Capture", systemImage: "tray.and.arrow.down") }
         }
-        .frame(width: 560, height: 520)
+        .frame(width: 560, height: 640)
     }
 
     private func byteString(_ value: Int) -> String {
