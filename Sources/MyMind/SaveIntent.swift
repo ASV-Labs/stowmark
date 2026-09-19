@@ -3,9 +3,9 @@ import Foundation
 import LibraryCore
 
 struct SaveToMyMindIntent: AppIntent {
-    static var title: LocalizedStringResource = "Save to My Mind"
-    static var description = IntentDescription("Save a web link into My Mind on this Mac.")
-    static var openAppWhenRun = true
+    static let title: LocalizedStringResource = "Save to My Mind"
+    static let description = IntentDescription("Save a web link into My Mind on this Mac.")
+    static let openAppWhenRun = true
 
     @Parameter(title: "URL")
     var url: URL
@@ -73,5 +73,5 @@ struct MyMindShortcuts: AppShortcutsProvider {
         )
     }
 
-    static var shortcutTileColor: ShortcutTileColor = .blue
+    static let shortcutTileColor: ShortcutTileColor = .blue
 }

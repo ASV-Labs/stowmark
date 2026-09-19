@@ -132,7 +132,7 @@ struct ItemCard: View {
     }
 
     @ViewBuilder
-    private func photoZone<Fallback: View>(padding: CGFloat = 0, @ViewBuilder fallback: () -> Fallback) -> some View {
+    private func photoZone<Fallback: View>(padding: CGFloat = 0, @ViewBuilder fallback: @escaping () -> Fallback) -> some View {
         if let asset = cardPhotoAsset {
             AsyncThumbnail(asset: asset, root: root, maxPointSize: thumbnailPointSize) {
                 fallback()
@@ -759,7 +759,6 @@ private struct CardQuickActions: View {
         .buttonStyle(.borderless)
         .disabled(!enabled)
         .opacity(hovered ? 1 : 0)
-        .accessibilityOpacity(1)
         .allowsHitTesting(hovered)
         .help(help)
         .accessibilityLabel(label)

@@ -123,7 +123,7 @@ struct ThumbnailStatus: Equatable {
 }
 
 struct ThumbnailStatusKey: PreferenceKey {
-    static var defaultValue = ThumbnailStatus()
+    static let defaultValue = ThumbnailStatus()
     static func reduce(value: inout ThumbnailStatus, nextValue: () -> ThumbnailStatus) {
         let next = nextValue()
         value.loaded = value.loaded || next.loaded

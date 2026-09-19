@@ -577,7 +577,9 @@ struct LibraryShell: View {
                             selected: item.id == model.selectedItemID,
                             root: model.store?.rootURL,
                             size: model.cardSize,
-                            onTrash: { model.trashItem(item.id, confirm: false) }
+                            onTrash: { model.trashItem(item.id, confirm: false) },
+                            onFavorite: { model.toggleFavorite(item.id) },
+                            onOpen: item.originalAsset != nil || item.originalURL != nil ? { model.openOriginal(item) } : nil
                         )
                             .id(item.id)
                             .modifier(ItemDragModifier(id: item.id, type: Self.itemDragType))
@@ -612,7 +614,9 @@ struct LibraryShell: View {
                             selected: item.id == model.selectedItemID,
                             root: model.store?.rootURL,
                             size: model.cardSize.coverSize,
-                            onTrash: { model.trashItem(item.id, confirm: false) }
+                            onTrash: { model.trashItem(item.id, confirm: false) },
+                            onFavorite: { model.toggleFavorite(item.id) },
+                            onOpen: item.originalAsset != nil || item.originalURL != nil ? { model.openOriginal(item) } : nil
                         )
                             .id(item.id)
                             .modifier(ItemDragModifier(id: item.id, type: Self.itemDragType))

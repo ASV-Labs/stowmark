@@ -2,7 +2,7 @@
 
 /// Services menu target. The selector must stay `saveSelection:userData:error:`
 /// so Launch Services can start the app and deliver the pasteboard.
-final class ServicesProvider: NSObject {
+final class ServicesProvider: NSObject, @unchecked Sendable {
     static let shared = ServicesProvider()
 
     @objc(saveSelection:userData:error:)
