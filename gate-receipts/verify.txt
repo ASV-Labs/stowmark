@@ -1,0 +1,50 @@
+{
+  "schema_version": "adi.verify.v1",
+  "build_dir": "/Users/charlesbonetti/my-mind",
+  "mode": "static-heuristics (no compile/render/device; necessary, never sufficient)",
+  "declared_platforms": [
+    "ios"
+  ],
+  "detected_stacks": [
+    "pwa",
+    "swiftui"
+  ],
+  "score_results": [
+    {
+      "file": "adi-011-score-sheet.md",
+      "block": 1,
+      "axes": {
+        "A1": 5.0,
+        "A2": 5.0,
+        "A3": 5.0,
+        "A4": 5.0,
+        "A5": 5.0,
+        "A6": 4.0,
+        "A7": 4.0
+      },
+      "declared_overall": 4.8,
+      "computed_overall": 4.8,
+      "hardfails": "none",
+      "verdict": "PASS"
+    },
+    {
+      "file": "adi-011-score-sheet.md",
+      "block": 2,
+      "axes": {
+        "A1": 5.0,
+        "A2": 4.0,
+        "A3": 5.0,
+        "A4": 5.0,
+        "A5": 4.0,
+        "A6": 4.0,
+        "A7": 4.0
+      },
+      "declared_overall": 4.45,
+      "computed_overall": 4.45,
+      "hardfails": "none",
+      "verdict": "PASS"
+    }
+  ],
+  "findings": [],
+  "exit": 0
+}

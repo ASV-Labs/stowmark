@@ -1,0 +1,10 @@
+{
+  "extension_name": {
+    "message": "My Mind",
+    "description": "The display name for the extension."
+  },
+  "extension_description": {
+    "message": "Save pages and selections into My Mind on this Mac.",
+    "description": "Description of the extension."
+  }
+}

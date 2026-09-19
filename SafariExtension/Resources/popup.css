@@ -1,0 +1,20 @@
+:root { color-scheme: light dark; font: 13px -apple-system, BlinkMacSystemFont, sans-serif; }
+body { margin: 0; min-width: 280px; background: #F3EDE4; color: #1F1A16; }
+@media (prefers-color-scheme: dark) {
+  body { background: #161311; color: #F6F1EA; }
+}
+main { padding: 14px; display: grid; gap: 10px; }
+h1 { margin: 0; font-size: 16px; }
+label { display: grid; gap: 4px; }
+input, textarea {
+  border: 1px solid #DDD3C7; border-radius: 8px; padding: 8px; background: #FFFCF8; color: inherit;
+}
+@media (prefers-color-scheme: dark) {
+  input, textarea { background: #26211D; border-color: #3A332C; }
+}
+.actions { display: grid; gap: 8px; }
+button {
+  border: 0; border-radius: 10px; padding: 10px 12px; background: #1B5E3B; color: #FFFCF8; font-weight: 600;
+}
+button#open, button#undo { background: transparent; color: inherit; border: 1px solid #DDD3C7; }
+#status { margin: 0; }

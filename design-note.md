@@ -1,0 +1,25 @@
+# My Mind — ADI-010 design note
+
+Working product name chosen by Charles: My Mind. The blueprint’s “Visual Library” label is not used in the interface. mymind.com already exists; this note does not claim a trademark clearance.
+
+Platform target(s): macOS desktop (SwiftUI checker token ios — the shipping target is the Mac, not a phone)
+App category & jobs-to-be-done: utility — save a link, image, excerpt, or PDF and find that same thing later without building a filing system first
+Selected navigation model (+ per-platform expression): rail-split-listdetail — Mac NavigationSplitView, sidebar for places, detail for objects; preview is an overlay, not a third column; Escape and the Close control dismiss it and return focus to the same card
+Why this navigation fits the IA: the job is recognizing and retrieving many saved objects, so places stay in the shelf and objects stay in one collection; this is the approved Messages-style model, deliberately not the utility atlas one-tap default
+Selected screen composition (per key screen): Library default is an equal-size card grid with shared zones (preview, title, two-line context, pinned source/kind/retention footer); kind identity lives inside that geometry; Rows & Columns is a native table; Covers is equal preview tiles with typographic fallbacks; search stays on that surface with a visible place-vs-entire-library scope; preview is a focused overlay; empty state is one next save; capture is an inline bar on the library only
+Why this is not a generic template app (transplant test): cards change silhouette with content kind, the retention line states what is actually on disk, and search chips are constraints on saved fields — transplanting this shell onto a chat or finance app would leave those objects meaningless
+Platform conventions honored (HIG / Material / PWA), per platform: standard Mac window and sidebar, system text styles, Settings scene, command shortcuts, no phone tab bar, no invented status-bar chrome, no wrapped web view
+Style atlas match: quiet warm paper canvas, one green accent, content color dominates, functional and honest rather than a dashboard
+Reference moves borrowed (max 3, with verification grade): macOS Messages split view (Apple HIG, platform convention); search-led visual cards as described by the product blueprint’s mymind reference (inspiration only, screens not copied); kind-specific card treatments from the blueprint mockups (labeled-simulated, not a shipped app)
+Template budget for this category / templated elements used / justification if > 0: 0 / 0 / utility budget is zero templated rows; shelves are navigation places, not a horizontal media template
+Tab bar: no tab bar
+FAB: none — paste and drop live in the library capture bar, which is not mounted on a tab chassis and does not appear on preview, settings, or import
+Onboarding: none — the empty library is the first step; Safari access is explained in Settings and can be skipped
+Forbidden defaults rejected (from the twelve tells): no five-tab bar, no identical card wall, no stat-tile dashboard, no floating action button, no hamburger drawer, no onboarding carousel, no identical phone UI, no webview shell, no happy-path-only states, no modal-everything, no ignored safe areas, no fixed point sizes
+Store-asset/screenshot provenance: labeled-simulated
+State design (loading, empty, error, offline, success) per key screen: empty library with no sample data; capture shows Saving only while the store call runs, then Saved, Already in your library, or Not saved with a retry; missing previews stay usable bookmarks; search with no hits keeps the library and offers Clear filters; store-open failure is a recovery screen, not a fake empty library; offline local records remain readable
+Motion / gesture / haptics budget: preview opacity only, skipped when Reduce Motion is on; no decorative motion; no phone haptics on the Mac
+Permissions strategy (just-in-time, primed, least-privilege, graceful-deny): no account; sandbox; network only to fetch a page the user just saved; private and loopback addresses are stored as bookmarks and not fetched; Safari permission is optional and explained before use; denying it leaves paste, drop, and search working
+Accessibility plan (screen reader, Dynamic Type / font scale, contrast, reduce motion, target size): system text styles, VoiceOver labels on cards and tags, visible focus, selection not by color alone, 44pt hit targets on primary controls, result counts announced after typing pauses, secondary actions in menus not only on hover
+Performance & battery risk: one local SQLite file; enrichment is a short job after an explicit save, not a daemon; remote preview fetch can be turned off; no polling loop
+Implementation stack (per platform): SwiftUI Mac app, LibraryCore on SQLite with FTS5, Safari web extension whose native handler writes the same store; Chrome is deferred until a transport is proven
