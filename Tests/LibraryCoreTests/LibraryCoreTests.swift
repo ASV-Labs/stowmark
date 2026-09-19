@@ -409,4 +409,41 @@ final class LibraryCoreTests: XCTestCase {
         XCTAssertEqual(unlabeled.map(\.label), ["Design"])
         XCTAssertEqual(unlabeled.first?.count, 0)
     }
+
+    func testUploadedPreviewAndDescriptionStayOnTheCard() throws {
+        let store = try makeStore()
+        let saved = try store.capture(CaptureRequest(
+            captureKind: .link,
+            targetURL: "https://example.com/harbor",
+            capturedTitle: "Harbor",
+            origin: "test"
+        ))
+        let id = try XCTUnwrap(saved.itemID)
+        let png = Data(base64Encoded: "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==")!
+        try store.attachPreview(itemID: id, data: png)
+        try store.updateDescription(itemID: id, description: "A quiet harbor at dusk")
+
+        let item = try XCTUnwrap(try store.item(id: id))
+        XCTAssertEqual(item.previewState, .ready)
+        XCTAssertEqual(try Data(contentsOf: item.previewAsset!.fileURL(in: store.rootURL)), png)
+        XCTAssertEqual(item.summary, "A quiet harbor at dusk")
+        XCTAssertEqual(item.summaryOrigin, .user)
+        XCTAssertEqual(item.cardContext, "A quiet harbor at dusk")
+        XCTAssertFalse(item.lacksPreviewPhoto)
+
+        try store.completeEnrichment(
+            itemID: id,
+            metadata: PageMetadata(title: nil, description: "Fetched blurb", author: nil, imageURL: nil, openGraphType: nil),
+            preview: png + Data([0x00]),
+            previewFailed: false
+        )
+        let kept = try XCTUnwrap(try store.item(id: id))
+        XCTAssertEqual(kept.summary, "A quiet harbor at dusk")
+        XCTAssertEqual(try Data(contentsOf: kept.previewAsset!.fileURL(in: store.rootURL)), png)
+
+        try store.updateDescription(itemID: id, description: "   ")
+        let cleared = try XCTUnwrap(try store.item(id: id))
+        XCTAssertNil(cleared.summary)
+        XCTAssertNil(cleared.cardContext)
+    }
 }

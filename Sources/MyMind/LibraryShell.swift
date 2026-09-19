@@ -579,7 +579,8 @@ struct LibraryShell: View {
                             size: model.cardSize,
                             onTrash: { model.trashItem(item.id, confirm: false) },
                             onFavorite: { model.toggleFavorite(item.id) },
-                            onOpen: item.originalAsset != nil || item.originalURL != nil ? { model.openOriginal(item) } : nil
+                            onOpen: item.originalAsset != nil || item.originalURL != nil ? { model.openOriginal(item) } : nil,
+                            onAddPreview: { model.choosePreviewPhoto(for: item.id) }
                         )
                             .id(item.id)
                             .modifier(ItemDragModifier(id: item.id, type: Self.itemDragType))
@@ -616,7 +617,8 @@ struct LibraryShell: View {
                             size: model.cardSize.coverSize,
                             onTrash: { model.trashItem(item.id, confirm: false) },
                             onFavorite: { model.toggleFavorite(item.id) },
-                            onOpen: item.originalAsset != nil || item.originalURL != nil ? { model.openOriginal(item) } : nil
+                            onOpen: item.originalAsset != nil || item.originalURL != nil ? { model.openOriginal(item) } : nil,
+                            onAddPreview: { model.choosePreviewPhoto(for: item.id) }
                         )
                             .id(item.id)
                             .modifier(ItemDragModifier(id: item.id, type: Self.itemDragType))
@@ -895,6 +897,9 @@ struct LibraryShell: View {
     private func cardMenu(_ item: SavedItem) -> some View {
         Group {
             Button("Preview") { model.select(item.id); model.openPreview() }
+            if item.lacksPreviewPhoto, item.trashedAt == nil {
+                Button("Add preview photo") { model.choosePreviewPhoto(for: item.id) }
+            }
             Button(item.retention == .bookmark ? "Open original" : "Open saved file") { model.openOriginal(item) }
             if model.place == .trash {
                 Button("Restore") { model.select(item.id); model.restoreSelected() }

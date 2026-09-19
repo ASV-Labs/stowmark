@@ -118,14 +118,27 @@ public struct SavedItem: Identifiable, Sendable, Equatable {
         return "On this Mac"
     }
 
+    /// The line under the title. A description wins, so editing preview text changes the card. A note fills in only when there is no description.
     public var cardContext: String? {
+        if let summary, !summary.isEmpty { return summary }
         if let note, !note.isEmpty { return note }
-        return summary
+        return nil
     }
 
     public var contextIsNote: Bool {
+        if let summary, !summary.isEmpty { return false }
         if let note, !note.isEmpty { return true }
         return false
+    }
+
+    /// True when the card preview zone has nothing to show as a picture.
+    public var lacksPreviewPhoto: Bool {
+        switch kind {
+        case .image, .book:
+            return originalAsset == nil && previewAsset == nil
+        default:
+            return previewAsset == nil
+        }
     }
 
     public var tagsLabel: String {

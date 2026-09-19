@@ -10,6 +10,7 @@ struct ItemCard: View {
     var onTrash: (() -> Void)? = nil
     var onFavorite: (() -> Void)? = nil
     var onOpen: (() -> Void)? = nil
+    var onAddPreview: (() -> Void)? = nil
     @Environment(\.colorScheme) private var scheme
     @Environment(\.colorSchemeContrast) private var contrast
     @State private var hovered = false
@@ -22,14 +23,20 @@ struct ItemCard: View {
                 .frame(maxWidth: .infinity)
                 .frame(height: size.previewHeight)
                 .background(previewBackdrop)
-                .clipped()
-                .overlay {
-                    if showsFetchingPreview {
-                        Text("Fetching preview…")
-                            .font(.caption)
-                            .foregroundStyle(Theme.secondary(scheme))
-                    }
+            .clipped()
+            .overlay {
+                if showsFetchingPreview {
+                    Text("Fetching preview…")
+                        .font(.caption)
+                        .foregroundStyle(Theme.secondary(scheme))
                 }
+            }
+            .overlay(alignment: .bottomLeading) {
+                if showsAddPhoto, let onAddPreview {
+                    AddPreviewPhotoButton(compact: true, action: onAddPreview)
+                        .padding(8)
+                }
+            }
             VStack(alignment: .leading, spacing: 6) {
                 Text(item.title)
                     .font(item.kind == .book || item.kind == .research ? .system(.headline, design: .serif) : .headline)
@@ -40,7 +47,7 @@ struct ItemCard: View {
                     .font(.callout)
                     .foregroundStyle(item.cardContext == nil ? Color.clear : (item.contextIsNote ? Theme.ink(scheme) : Theme.secondary(scheme)))
                     .lineLimit(2)
-                    .help(item.cardContext ?? "Open preview to read the rest.")
+                    .help(item.cardContext ?? "Open the card to add a description.")
                 Spacer(minLength: 0)
                 footer
                 tagRow
@@ -88,13 +95,13 @@ struct ItemCard: View {
         case .image:
             photoZone(padding: 8) { imagePlaceholder }
         case .excerpt:
-            excerptPreview
+            photoIfPresent { excerptPreview }
         case .document:
-            documentPreview
+            photoIfPresent { documentPreview }
         case .research:
-            researchPreview
+            photoIfPresent { researchPreview }
         case .social:
-            socialPreview
+            photoIfPresent { socialPreview }
         case .article:
             photoZone { articleMasthead }
         case .link:
@@ -104,6 +111,10 @@ struct ItemCard: View {
 
     /// Point size of the card preview zone. The cache decodes about 2× this, not the original.
     private var thumbnailPointSize: CGFloat { size.previewHeight }
+
+    private var showsAddPhoto: Bool {
+        item.trashedAt == nil && item.lacksPreviewPhoto && onAddPreview != nil
+    }
 
     /// Pending enrichment with nothing to show. A thumbnail that is still decoding does not count as missing.
     @MainActor
@@ -129,6 +140,15 @@ struct ItemCard: View {
             return item.originalAsset ?? item.previewAsset
         }
         return item.previewAsset ?? (item.kind == .image ? item.originalAsset : nil)
+    }
+
+    @ViewBuilder
+    private func photoIfPresent<Fallback: View>(@ViewBuilder fallback: @escaping () -> Fallback) -> some View {
+        if cardPhotoAsset != nil {
+            photoZone(fallback: fallback)
+        } else {
+            fallback()
+        }
     }
 
     @ViewBuilder
@@ -386,11 +406,14 @@ struct ItemPreview: View {
     var model: LibraryModel
     @Environment(\.colorScheme) private var scheme
     @State private var title: String = ""
+    @State private var descriptionText: String = ""
+    @State private var committedDescription: String = ""
     @State private var note: String = ""
     @State private var committedNote: String = ""
     @State private var tagDraft = ""
     @State private var showDetails = false
     @State private var noteSaveTask: Task<Void, Never>?
+    @State private var descriptionSaveTask: Task<Void, Never>?
 
     var body: some View {
         ScrollView {
@@ -418,15 +441,19 @@ struct ItemPreview: View {
                         .font(.callout)
                         .foregroundStyle(Theme.secondary(scheme))
                 }
-                if item.kind == .excerpt {
-                    Text(item.summary ?? "")
-                        .font(.system(.body, design: .serif))
-                        .textSelection(.enabled)
-                } else if let summary = item.summary, !summary.isEmpty {
-                    Text(summary)
-                        .font(.body)
+                if item.lacksPreviewPhoto, item.trashedAt == nil {
+                    Button("Add preview photo") { model.choosePreviewPhoto(for: item.id) }
+                        .buttonStyle(.bordered)
+                        .frame(minHeight: 36)
+                        .help("Choose a photo for this card’s preview")
+                }
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Description")
+                        .font(.caption)
                         .foregroundStyle(Theme.secondary(scheme))
-                        .textSelection(.enabled)
+                    TextField("Preview text on the card", text: $descriptionText, axis: .vertical)
+                        .lineLimit(3...8)
+                        .textFieldStyle(.roundedBorder)
                 }
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Your note")
@@ -503,20 +530,25 @@ struct ItemPreview: View {
             .padding(18)
         }
         .onAppear {
-            adoptNote(from: item, flushPreviousID: nil)
+            adoptFields(from: item, flushPreviousID: nil)
             title = item.title
         }
         .onChange(of: item.id) { oldID, _ in
-            adoptNote(from: item, flushPreviousID: oldID)
+            adoptFields(from: item, flushPreviousID: oldID)
             title = item.title
         }
         .onChange(of: note) { _, _ in
             scheduleNoteSave()
         }
+        .onChange(of: descriptionText) { _, _ in
+            scheduleDescriptionSave()
+        }
         .onDisappear {
             noteSaveTask?.cancel()
+            descriptionSaveTask?.cancel()
             if title != item.title { model.saveTitle(item.id, title) }
             if note != (item.note ?? "") { model.saveNote(item.id, note) }
+            if descriptionText != (item.summary ?? "") { model.saveDescription(item.id, descriptionText) }
         }
     }
 
@@ -537,13 +569,33 @@ struct ItemPreview: View {
     }
 
     @MainActor
-    private func adoptNote(from item: SavedItem, flushPreviousID: UUID?) {
+    private func adoptFields(from item: SavedItem, flushPreviousID: UUID?) {
         noteSaveTask?.cancel()
-        if let flushPreviousID, note != committedNote {
-            model.saveNote(flushPreviousID, note)
+        descriptionSaveTask?.cancel()
+        if let flushPreviousID {
+            if note != committedNote { model.saveNote(flushPreviousID, note) }
+            if descriptionText != committedDescription { model.saveDescription(flushPreviousID, descriptionText) }
         }
         note = item.note ?? ""
         committedNote = note
+        descriptionText = item.summary ?? ""
+        committedDescription = descriptionText
+    }
+
+    @MainActor
+    private func scheduleDescriptionSave() {
+        descriptionSaveTask?.cancel()
+        let draft = descriptionText
+        guard draft != committedDescription else { return }
+        let itemID = item.id
+        descriptionSaveTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(600))
+            guard !Task.isCancelled else { return }
+            model.saveDescription(itemID, draft)
+            if item.id == itemID {
+                committedDescription = draft
+            }
+        }
     }
 
     @MainActor
@@ -622,6 +674,7 @@ struct CoverTile: View {
     var onTrash: (() -> Void)? = nil
     var onFavorite: (() -> Void)? = nil
     var onOpen: (() -> Void)? = nil
+    var onAddPreview: (() -> Void)? = nil
     @Environment(\.colorScheme) private var scheme
     @Environment(\.colorSchemeContrast) private var contrast
     @State private var hovered = false
@@ -660,6 +713,12 @@ struct CoverTile: View {
                 RoundedRectangle(cornerRadius: Theme.Radius.card)
                     .stroke(selected ? Theme.accent(scheme) : Theme.line(scheme, increased: contrast == .increased), lineWidth: selected ? 2 : 1)
             )
+            .overlay(alignment: .topLeading) {
+                if item.trashedAt == nil, item.lacksPreviewPhoto, let onAddPreview {
+                    AddPreviewPhotoButton(compact: true, action: onAddPreview)
+                        .padding(6)
+                }
+            }
             .overlay(alignment: .bottomTrailing) {
                 if item.trashedAt == nil {
                     CardQuickActions(
@@ -712,6 +771,24 @@ struct CoverTile: View {
         .padding(12)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(Theme.wash(item.sourceLabel, scheme))
+    }
+}
+
+private struct AddPreviewPhotoButton: View {
+    var compact: Bool
+    var action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Label(compact ? "Add photo" : "Add preview photo", systemImage: "photo.badge.plus")
+                .font(.caption)
+                .padding(.horizontal, compact ? 8 : 10)
+                .padding(.vertical, 4)
+                .background(.ultraThinMaterial, in: Capsule())
+        }
+        .buttonStyle(.plain)
+        .help("Choose a photo for this card’s preview")
+        .accessibilityLabel("Add preview photo")
     }
 }
 

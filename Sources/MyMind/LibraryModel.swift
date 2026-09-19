@@ -791,6 +791,37 @@ final class LibraryModel {
         reload()
     }
 
+    func saveDescription(_ id: UUID, _ description: String) {
+        try? store?.updateDescription(itemID: id, description: description)
+        reload()
+    }
+
+    func choosePreviewPhoto(for id: UUID) {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.image]
+        panel.allowsMultipleSelection = false
+        panel.canChooseDirectories = false
+        panel.canChooseFiles = true
+        panel.prompt = "Use Photo"
+        panel.message = "This photo is the card preview. It does not replace a saved original."
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        let accessed = url.startAccessingSecurityScopedResource()
+        defer { if accessed { url.stopAccessingSecurityScopedResource() } }
+        guard let store else { return }
+        guard let bytes = try? Data(contentsOf: url),
+              let preview = Thumbnail.makePreview(from: bytes) else {
+            showFailure("That photo could not be used as a preview.")
+            return
+        }
+        do {
+            try store.attachPreview(itemID: id, data: preview)
+        } catch {
+            showFailure(error.localizedDescription)
+            return
+        }
+        reload()
+    }
+
     func saveNote(_ id: UUID, _ note: String) {
         try? store?.updateNote(itemID: id, note: note)
         reload()

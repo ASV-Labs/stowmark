@@ -171,9 +171,12 @@ public final class LibraryStore: @unchecked Sendable {
 
     public func attachPreview(itemID: UUID, data: Data) throws {
         try sync {
-            guard data.count <= Limits.maxPreviewBytes,
-                  let signature = FileSignature.sniff(data),
-                  signature == .png || signature == .jpeg else { return }
+            guard data.count <= Limits.maxPreviewBytes else {
+                throw LibraryError.tooLarge("That photo is larger than My Mind can keep as a preview.")
+            }
+            guard let signature = FileSignature.sniff(data), signature == .png || signature == .jpeg else {
+                throw LibraryError.invalidFile("Preview photos need to be a JPEG or PNG.")
+            }
             try requireItem(itemID)
             let staged = try stage(data: data, folder: "assets/previews")
             try db.execute("DELETE FROM assets WHERE item_id = ? AND role = 'preview'", [.text(key(itemID))])
@@ -230,6 +233,23 @@ public final class LibraryStore: @unchecked Sendable {
             try db.execute(
                 "UPDATE items SET title = ?, title_origin = 'user', updated_at = ? WHERE id = ?",
                 [.text(cleaned), .text(stamp(Date())), .text(key(itemID))]
+            )
+            try writeSearch(id: key(itemID))
+        }
+    }
+
+    public func updateDescription(itemID: UUID, description: String) throws {
+        try sync {
+            try requireItem(itemID)
+            let cleaned = String(description.trimmingCharacters(in: .whitespacesAndNewlines).prefix(2_000))
+            try db.execute(
+                "UPDATE items SET description = ?, description_origin = ?, updated_at = ? WHERE id = ?",
+                [
+                    cleaned.isEmpty ? .null : .text(cleaned),
+                    cleaned.isEmpty ? .null : .text(FieldOrigin.user.rawValue),
+                    .text(stamp(Date())),
+                    .text(key(itemID)),
+                ]
             )
             try writeSearch(id: key(itemID))
         }
@@ -533,6 +553,7 @@ public final class LibraryStore: @unchecked Sendable {
     public func refreshPreview(itemID: UUID) throws {
         try sync {
             try requireItem(itemID)
+            try db.execute("DELETE FROM assets WHERE item_id = ? AND role = 'preview'", [.text(key(itemID))])
             try db.execute("UPDATE items SET preview_state = 'pending' WHERE id = ?", [.text(key(itemID))])
             let existing = try db.query(
                 "SELECT id FROM enrichment_jobs WHERE item_id = ? AND status = 'pending'",
@@ -604,7 +625,7 @@ public final class LibraryStore: @unchecked Sendable {
                 guard let display = TagText.display(for: label), let normalized = TagText.normalize(label) else { continue }
                 try upsertTag(itemID: key(itemID), display: display, normalized: normalized, status: "suggested", origin: "suggestion", onlyIfMissing: true)
             }
-            if let preview, preview.count <= Limits.maxPreviewBytes,
+            if item.previewAsset == nil, let preview, preview.count <= Limits.maxPreviewBytes,
                let signature = FileSignature.sniff(preview), signature == .png || signature == .jpeg {
                 let staged = try stage(data: preview, folder: "assets/previews")
                 try db.execute("DELETE FROM assets WHERE item_id = ? AND role = 'preview'", [.text(key(itemID))])
