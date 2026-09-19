@@ -451,9 +451,7 @@ struct ItemPreview: View {
                     Text("Description")
                         .font(.caption)
                         .foregroundStyle(Theme.secondary(scheme))
-                    TextField("Preview text on the card", text: $descriptionText, axis: .vertical)
-                        .lineLimit(3...8)
-                        .textFieldStyle(.roundedBorder)
+                    ResizableTextBlock(text: $descriptionText, placeholder: "Preview text on the card")
                 }
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Your note")
@@ -771,6 +769,65 @@ struct CoverTile: View {
         .padding(12)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(Theme.wash(item.sourceLabel, scheme))
+    }
+}
+
+private struct ResizableTextBlock: View {
+    @Binding var text: String
+    var placeholder: String
+    @Environment(\.colorScheme) private var scheme
+    @State private var height: CGFloat = 132
+    @State private var dragOrigin: CGFloat?
+
+    var body: some View {
+        VStack(spacing: 0) {
+            ZStack(alignment: .topLeading) {
+                TextEditor(text: $text)
+                    .font(.body)
+                    .foregroundStyle(Theme.ink(scheme))
+                    .scrollContentBackground(.hidden)
+                    .padding(.horizontal, 4)
+                    .padding(.top, 4)
+                if text.isEmpty {
+                    Text(placeholder)
+                        .font(.body)
+                        .foregroundStyle(Theme.secondary(scheme).opacity(0.72))
+                        .padding(.horizontal, 9)
+                        .padding(.vertical, 10)
+                        .allowsHitTesting(false)
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: height)
+            resizeGrip
+        }
+        .background(Theme.sidebar(scheme), in: RoundedRectangle(cornerRadius: 6))
+        .overlay(RoundedRectangle(cornerRadius: 6).stroke(Theme.line(scheme, increased: false)))
+    }
+
+    private var resizeGrip: some View {
+        HStack {
+            Spacer()
+            Image(systemName: "line.3.horizontal")
+                .font(.caption2)
+                .foregroundStyle(Theme.secondary(scheme))
+                .frame(width: 44, height: 16)
+                .contentShape(Rectangle())
+        }
+        .frame(maxWidth: .infinity, minHeight: 18)
+        .contentShape(Rectangle())
+        .highPriorityGesture(
+            DragGesture(minimumDistance: 1)
+                .onChanged { value in
+                    if dragOrigin == nil { dragOrigin = height }
+                    let base = dragOrigin ?? height
+                    height = min(420, max(96, base + value.translation.height))
+                }
+                .onEnded { _ in dragOrigin = nil }
+        )
+        .help("Drag to resize the description")
+        .accessibilityLabel("Resize description")
+        .accessibilityHint("Drag up or down to change the height")
     }
 }
 
