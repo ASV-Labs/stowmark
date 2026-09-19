@@ -31,6 +31,9 @@ fi
 echo "== Safari extension =="
 "$ROOT/scripts/assemble-appex.sh" "$APP"
 
+echo "== Share extension =="
+"$ROOT/scripts/assemble-share-appex.sh" "$APP"
+
 echo "== Signing =="
 codesign --force --options runtime --timestamp --entitlements "$ROOT/App/MyMind.entitlements" --sign "$IDENTITY" "$APP/Contents/Helpers/MyMindTool"
 codesign --force --options runtime --timestamp --entitlements "$ROOT/App/MyMind.entitlements" --sign "$IDENTITY" "$APP/Contents/MacOS/MyMind"
@@ -57,6 +60,9 @@ Export your current library from Settings before replacing an older My Mind.
 
 Safari: Settings → Open Safari Extensions… and turn on My Mind.
 Save Page is a click, not automatic. "Saved" appears only after the library confirms it.
+
+Share: from Safari, Chrome, Arc, Preview, Finder, or Notes, choose Share → My Mind.
+The sheet says what will be kept before you save. "Saved" appears only after the library confirms it.
 EOF
 
 hdiutil create -volname "My Mind Alpha" -srcfolder "$STAGE" -ov -format UDZO "$DMG"

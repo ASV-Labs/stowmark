@@ -9,6 +9,7 @@ let package = Package(
         .executable(name: "MyMind", targets: ["MyMind"]),
         .executable(name: "MyMindTool", targets: ["MyMindTool"]),
         .executable(name: "MyMindExtension", targets: ["MyMindExtension"]),
+        .executable(name: "MyMindShare", targets: ["MyMindShare"]),
     ],
     targets: [
         .target(
@@ -35,6 +36,17 @@ let package = Package(
             swiftSettings: [.unsafeFlags(["-application-extension"])],
             linkerSettings: [
                 .linkedFramework("SafariServices"),
+                .unsafeFlags(["-Xlinker", "-e", "-Xlinker", "_NSExtensionMain"]),
+            ]
+        ),
+        .executableTarget(
+            name: "MyMindShare",
+            dependencies: ["LibraryCore"],
+            swiftSettings: [.unsafeFlags(["-application-extension"])],
+            linkerSettings: [
+                .linkedFramework("AppKit"),
+                .linkedFramework("SwiftUI"),
+                .linkedFramework("UniformTypeIdentifiers"),
                 .unsafeFlags(["-Xlinker", "-e", "-Xlinker", "_NSExtensionMain"]),
             ]
         ),
