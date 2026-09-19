@@ -36,6 +36,7 @@ final class LibraryModel {
     private(set) var items: [SavedItem] = []
     private(set) var matchedCount = 0
     private(set) var shelves: [Shelf] = []
+    private(set) var tagCounts: [TagCount] = []
     private(set) var allCount = 0
     private(set) var favoriteCount = 0
     private(set) var trashCount = 0
@@ -71,6 +72,7 @@ final class LibraryModel {
     var rememberLastPlace = true
     var defaultSortRaw: String = ResultOrder.recent.rawValue
     private var lastRequestID: UUID?
+    private var lastTrashedItemID: UUID?
     private var watchSource: DispatchSourceFileSystemObject?
     private var watchFD: Int32 = -1
     private var reloadScheduled = false
@@ -188,6 +190,7 @@ final class LibraryModel {
             items = []
             matchedCount = 0
             shelves = []
+            tagCounts = []
             allCount = 0
             favoriteCount = 0
             trashCount = 0
@@ -211,6 +214,7 @@ final class LibraryModel {
             query.limit = Self.displayPageSize
             items = try store.items(matching: query)
             shelves = try store.shelves()
+            tagCounts = try store.allTags(withCounts: true)
             let counts = try store.counts()
             allCount = counts.all
             favoriteCount = counts.favorites
@@ -234,7 +238,15 @@ final class LibraryModel {
             try? await Task.sleep(for: .milliseconds(250))
             guard generation == searchGeneration else { return }
             reload()
+            announceVisibleCount()
         }
+    }
+
+    func announceVisibleCount() {
+        let message = matchedCount > items.count
+            ? "Showing \(items.count) of \(matchedCount)"
+            : "\(items.count) items"
+        AccessibilityNotification.Announcement(message).post()
     }
 
     func focusSearch() { searchFocusToken += 1 }
@@ -373,6 +385,19 @@ final class LibraryModel {
         let current = items.firstIndex { $0.id == selectedItemID } ?? 0
         let next = min(max(0, current + delta), items.count - 1)
         selectedItemID = items[next].id
+        followPreview()
+    }
+
+    func moveSelection(toEnd: Bool) {
+        guard !items.isEmpty else { return }
+        selectedItemID = toEnd ? items.last?.id : items.first?.id
+        followPreview()
+    }
+
+    private func followPreview() {
+        if previewItemID != nil {
+            previewItemID = selectedItemID
+        }
     }
 
     func captureDraftLink() {
@@ -736,6 +761,7 @@ final class LibraryModel {
             showFailure(error.localizedDescription)
             return
         }
+        lastTrashedItemID = id
         if selectedItemID == id { selectedItemID = nil }
         if previewItemID == id { previewItemID = nil }
         captureFailed = false
@@ -807,6 +833,28 @@ final class LibraryModel {
         reload()
     }
 
+    func renameShelf(id: UUID, to name: String) {
+        guard let store else { return }
+        do {
+            try store.renameShelf(id: id, name: name)
+            reload()
+        } catch {
+            showFailure(error.localizedDescription)
+        }
+    }
+
+    func moveShelves(from source: IndexSet, to destination: Int) {
+        guard let store else { return }
+        var ordered = shelves
+        ordered.move(fromOffsets: source, toOffset: destination)
+        do {
+            try store.reorderShelves(ordered.map(\.id))
+            reload()
+        } catch {
+            showFailure(error.localizedDescription)
+        }
+    }
+
     func setFetchPreviews(_ enabled: Bool) {
         fetchPreviews = enabled
         try? store?.setBoolSetting("fetch_remote_previews", enabled)
@@ -838,6 +886,36 @@ final class LibraryModel {
             captureFailed = false
             captureMessage = result.message
             reload()
+        }
+    }
+
+    func undoLastTrash() {
+        guard let store, let id = lastTrashedItemID else { return }
+        do {
+            try store.restoreItem(itemID: id)
+            lastTrashedItemID = nil
+            selectedItemID = id
+            captureFailed = false
+            captureMessage = "Restored from My Mind Trash."
+            reload()
+        } catch {
+            showFailure(error.localizedDescription)
+        }
+    }
+
+    @discardableResult
+    func copySelectedOriginalURL() -> Bool {
+        guard let id = selectedItemID ?? previewItemID else { return false }
+        let item = items.first(where: { $0.id == id }) ?? (try? store?.item(id: id))
+        guard let raw = item?.originalURL, !raw.isEmpty else { return false }
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        return pasteboard.setString(raw, forType: .string)
+    }
+
+    nonisolated func receiveShelfDrop(itemID: UUID, shelfID: UUID) {
+        Task { @MainActor in
+            setMembership(itemID, shelfID, true)
         }
     }
 
@@ -1012,6 +1090,7 @@ final class LibraryModel {
                 try? await Task.sleep(for: .milliseconds(200))
                 self.reloadScheduled = false
                 self.reload()
+                self.announceVisibleCount()
             }
         }
         source.setCancelHandler { [weak self] in

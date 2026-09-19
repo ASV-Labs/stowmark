@@ -1,6 +1,17 @@
 import CryptoKit
 import Foundation
 
+public struct TagCount: Sendable, Equatable, Hashable, Identifiable {
+    public var label: String
+    public var count: Int
+    public var id: String { label }
+
+    public init(label: String, count: Int) {
+        self.label = label
+        self.count = count
+    }
+}
+
 public final class LibraryStore: @unchecked Sendable {
     public let rootURL: URL
     public let databaseURL: URL
@@ -311,6 +322,66 @@ public final class LibraryStore: @unchecked Sendable {
         try sync {
             try db.execute("DELETE FROM item_shelves WHERE shelf_id = ?", [.text(key(id))])
             try db.execute("DELETE FROM shelves WHERE id = ?", [.text(key(id))])
+        }
+    }
+
+    public func renameShelf(id: UUID, name: String) throws {
+        let cleaned = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !cleaned.isEmpty, cleaned.count <= 80 else {
+            throw LibraryError.invalidFile("A shelf name needs 1–80 characters.")
+        }
+        try sync {
+            let shelves = try loadShelves()
+            guard shelves.contains(where: { $0.id == id }) else { throw LibraryError.notFound }
+            if shelves.contains(where: { $0.id != id && $0.name.caseInsensitiveCompare(cleaned) == .orderedSame }) {
+                throw LibraryError.invalidFile("A shelf named “\(cleaned)” already exists.")
+            }
+            try db.execute(
+                "UPDATE shelves SET name = ? WHERE id = ?",
+                [.text(cleaned), .text(key(id))]
+            )
+        }
+    }
+
+    /// Writes `sort_order` so `orderedIDs` come first. Shelves omitted from the list keep their relative order after those ids.
+    public func reorderShelves(_ orderedIDs: [UUID]) throws {
+        try sync {
+            let existing = try loadShelves()
+            var rank: [UUID: Int] = [:]
+            var next = 1
+            for id in orderedIDs where existing.contains(where: { $0.id == id }) && rank[id] == nil {
+                rank[id] = next
+                next += 1
+            }
+            for shelf in existing where rank[shelf.id] == nil {
+                rank[shelf.id] = next
+                next += 1
+            }
+            for (id, order) in rank {
+                try db.execute(
+                    "UPDATE shelves SET sort_order = ? WHERE id = ?",
+                    [.int(Int64(order)), .text(key(id))]
+                )
+            }
+        }
+    }
+
+    /// Confirmed tags on items that are not in Trash, most used first.
+    /// Pass `withCounts: false` to keep the same order with counts zeroed.
+    public func allTags(withCounts: Bool = true) throws -> [TagCount] {
+        try sync {
+            let rows = try db.query("""
+            SELECT tags.display_label AS label, COUNT(items.id) AS n
+            FROM tags
+            JOIN item_tags ON item_tags.tag_id = tags.id AND item_tags.status = 'confirmed'
+            JOIN items ON items.id = item_tags.item_id AND items.trashed_at IS NULL
+            GROUP BY tags.normalized_name
+            ORDER BY n DESC, tags.display_label COLLATE NOCASE ASC
+            """)
+            return rows.compactMap { row in
+                guard let label = row.string("label"), !label.isEmpty else { return nil }
+                return TagCount(label: label, count: withCounts ? row.int("n") : 0)
+            }
         }
     }
 

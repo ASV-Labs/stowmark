@@ -369,4 +369,44 @@ final class LibraryCoreTests: XCTestCase {
         XCTAssertEqual(found.first?.title, "Saved while closed")
         XCTAssertEqual(try app.absorbPayloads(from: safari), 0)
     }
+
+    func testRenameReorderAndTagCountsSurviveRelaunch() throws {
+        let store = try makeStore()
+        let reading = try store.createShelf(name: "Reading")
+        let later = try store.createShelf(name: "Later")
+        try store.renameShelf(id: reading.id, name: "Now reading")
+        XCTAssertThrowsError(try store.renameShelf(id: later.id, name: "now reading")) { error in
+            guard let libraryError = error as? LibraryError, case .invalidFile = libraryError else {
+                return XCTFail("Expected a duplicate-name error, got \(error)")
+            }
+        }
+        XCTAssertThrowsError(try store.renameShelf(id: reading.id, name: " "))
+        try store.reorderShelves([later.id, reading.id])
+
+        let kept = try store.capture(CaptureRequest(
+            captureKind: .link,
+            targetURL: "https://example.com/kept",
+            capturedTitle: "Kept",
+            tags: ["Design"],
+            origin: "test"
+        ))
+        XCTAssertEqual(kept.status, .saved)
+        let discarded = try store.capture(CaptureRequest(
+            captureKind: .link,
+            targetURL: "https://example.com/discarded",
+            capturedTitle: "Discarded",
+            tags: ["Design", "Quiet"],
+            origin: "test"
+        ))
+        try store.trash(itemID: discarded.itemID!)
+
+        let reopened = try LibraryStore(root: root)
+        XCTAssertEqual(try reopened.shelves().map(\.name), ["Later", "Now reading"])
+        let counts = try reopened.allTags(withCounts: true)
+        XCTAssertEqual(counts.map(\.label), ["Design"])
+        XCTAssertEqual(counts.first?.count, 1)
+        let unlabeled = try reopened.allTags(withCounts: false)
+        XCTAssertEqual(unlabeled.map(\.label), ["Design"])
+        XCTAssertEqual(unlabeled.first?.count, 0)
+    }
 }
