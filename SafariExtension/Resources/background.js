@@ -18,12 +18,14 @@ function ensureMenus() {
     create();
   }
 }
-browser.runtime.onInstalled.addListener(ensureMenus);
+browser.runtime.onInstalled.addListener(() => {
+  ensureMenus();
+  refreshToolbarMode();
+});
 ensureMenus();
+refreshToolbarMode();
 
-browser.commands?.onCommand.addListener(async (command) => {
-  if (command !== "save-page") return;
-  const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+async function savePageTab(tab) {
   if (!tab?.url) return;
   const response = await native({
     action: "savePage",
@@ -32,7 +34,54 @@ browser.commands?.onCommand.addListener(async (command) => {
     title: tab.title ?? "",
   });
   await paintBadge(tab.id, response);
+}
+
+browser.commands?.onCommand.addListener(async (command) => {
+  if (command !== "save-page") return;
+  const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+  await savePageTab(tab);
 });
+
+function applyToolbarMode(enabled) {
+  if (!browser.action?.setPopup) return;
+  const popup = enabled ? "" : "popup.html";
+  browser.action.setPopup({ popup }).catch(() => {});
+}
+
+async function refreshToolbarMode() {
+  try {
+    const response = await native({ action: "getSettings" });
+    if (typeof response?.safariToolbarClickSaves === "boolean") {
+      applyToolbarMode(response.safariToolbarClickSaves);
+    }
+  } catch {
+    // Leave the popup in place. A missing flag stays off.
+  }
+}
+
+if (browser.runtime.onStartup) {
+  browser.runtime.onStartup.addListener(refreshToolbarMode);
+}
+
+try {
+  const port = browser.runtime.connectNative(NATIVE_ID);
+  port.onMessage.addListener((message) => {
+    const info = message?.userInfo ?? message ?? {};
+    if (typeof info.safariToolbarClickSaves === "boolean") {
+      applyToolbarMode(info.safariToolbarClickSaves);
+    } else if (message?.name === "capture-settings") {
+      refreshToolbarMode();
+    }
+  });
+} catch {
+  // The JSON flag is still read on the next getSettings.
+}
+
+if (browser.action?.onClicked) {
+  browser.action.onClicked.addListener((tab) => {
+    savePageTab(tab);
+  });
+}
 
 async function paintBadge(tabId, response) {
   if (!browser.action?.setBadgeText || tabId == null) return;

@@ -20,6 +20,7 @@ let package = Package(
             dependencies: ["LibraryCore"],
             linkerSettings: [
                 .linkedFramework("AppKit"),
+                .linkedFramework("AppIntents"),
                 .linkedFramework("SafariServices"),
                 .linkedFramework("LinkPresentation"),
                 .linkedFramework("WebKit"),
