@@ -53,10 +53,9 @@ struct LibraryShell: View {
             }
         }
         .onOpenURL { model.handleIncomingURL($0) }
-        .dropDestination(for: URL.self, action: { urls, _ in
-            model.importDropped(urls)
-            return true
-        }, isTargeted: { dropTargeted = $0 })
+        .onDrop(of: LibraryModel.dropTypes, isTargeted: $dropTargeted) { providers in
+            model.acceptDrop(providers)
+        }
         .onKeyPress(.escape) {
             guard model.previewItemID != nil else { return .ignored }
             model.closePreview()
@@ -367,7 +366,7 @@ struct LibraryShell: View {
                             selected: item.id == model.selectedItemID,
                             root: model.store?.rootURL,
                             size: model.cardSize,
-                            onTrash: { model.trashItem(item.id) }
+                            onTrash: { model.trashItem(item.id, confirm: false) }
                         )
                             .id(item.id)
                             .contentShape(Rectangle())
@@ -401,7 +400,7 @@ struct LibraryShell: View {
                             selected: item.id == model.selectedItemID,
                             root: model.store?.rootURL,
                             size: model.cardSize.coverSize,
-                            onTrash: { model.trashItem(item.id) }
+                            onTrash: { model.trashItem(item.id, confirm: false) }
                         )
                             .id(item.id)
                             .contentShape(Rectangle())
@@ -688,7 +687,7 @@ struct LibraryShell: View {
             } else {
                 Button(item.favorite ? "Unfavorite" : "Favorite") { model.toggleFavorite(item.id) }
                 Button("Filter by \(item.sourceLabel)") { model.filterDomain(item.sourceDomain ?? item.sourceLabel) }
-                Button("Move to Trash") { model.select(item.id); model.trashSelected() }
+                Button("Move to My Mind Trash") { model.select(item.id); model.trashSelected() }
             }
         }
     }

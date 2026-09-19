@@ -9,7 +9,8 @@ function ensureMenus() {
     browser.contextMenus.create({ id: "save-page", title: "Save page to My Mind", contexts: ["page"] });
     browser.contextMenus.create({ id: "save-selection", title: "Save selection to My Mind", contexts: ["selection"] });
     browser.contextMenus.create({ id: "save-link", title: "Save link to My Mind", contexts: ["link"] });
-    browser.contextMenus.create({ id: "save-image", title: "Save image link to My Mind", contexts: ["image"] });
+    browser.contextMenus.create({ id: "save-image", title: "Save image to My Mind", contexts: ["image"] });
+    browser.contextMenus.create({ id: "save-image-link", title: "Save image link to My Mind", contexts: ["image"] });
   };
   if (browser.contextMenus.removeAll) {
     browser.contextMenus.removeAll().then(create).catch(create);
@@ -19,6 +20,42 @@ function ensureMenus() {
 }
 browser.runtime.onInstalled.addListener(ensureMenus);
 ensureMenus();
+
+browser.commands?.onCommand.addListener(async (command) => {
+  if (command !== "save-page") return;
+  const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+  if (!tab?.url) return;
+  const response = await native({
+    action: "savePage",
+    requestId: crypto.randomUUID(),
+    pageURL: tab.url,
+    title: tab.title ?? "",
+  });
+  await paintBadge(tab.id, response);
+});
+
+async function paintBadge(tabId, response) {
+  if (!browser.action?.setBadgeText || tabId == null) return;
+  const status = response?.status;
+  const text = status === "saved" || status === "already_saved" ? "✓" : status === "pending" ? "…" : "!";
+  await browser.action.setBadgeText({ text, tabId });
+  if (browser.action.setBadgeBackgroundColor) {
+    await browser.action.setBadgeBackgroundColor({ color: status === "failed" ? "#8C2F22" : "#1B5E3B", tabId });
+  }
+  setTimeout(() => {
+    browser.action.setBadgeText({ text: "", tabId });
+  }, 3000);
+}
+
+function bytesToBase64(buffer) {
+  const bytes = new Uint8Array(buffer);
+  let binary = "";
+  const chunk = 0x8000;
+  for (let index = 0; index < bytes.length; index += chunk) {
+    binary += String.fromCharCode(...bytes.subarray(index, index + chunk));
+  }
+  return btoa(binary);
+}
 
 browser.contextMenus.onClicked.addListener(async (info, tab) => {
   const requestId = crypto.randomUUID();
@@ -43,12 +80,41 @@ browser.contextMenus.onClicked.addListener(async (info, tab) => {
     });
     return;
   }
-  if (info.menuItemId === "save-image") {
+  if (info.menuItemId === "save-image-link") {
     await native({
       action: "savePage",
       requestId,
       pageURL: info.srcUrl || pageURL,
       title: title || "Image",
+    });
+    return;
+  }
+  if (info.menuItemId === "save-image") {
+    const src = info.srcUrl || "";
+    let bytes = "";
+    let filename = "image";
+    try {
+      const response = await fetch(src);
+      const buffer = await response.arrayBuffer();
+      if (buffer.byteLength > 8 * 1024 * 1024) throw new Error("too large for the extension message");
+      bytes = bytesToBase64(buffer);
+      filename = decodeURIComponent(src.split("/").pop()?.split("?")[0] || "image");
+    } catch {
+      await native({
+        action: "savePage",
+        requestId,
+        pageURL: src || pageURL,
+        title: title || "Image",
+      });
+      return;
+    }
+    await native({
+      action: "saveImage",
+      requestId,
+      pageURL,
+      title: title || filename,
+      filename,
+      bytes,
     });
     return;
   }

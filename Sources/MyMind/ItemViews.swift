@@ -18,6 +18,13 @@ struct ItemCard: View {
                 .frame(height: size.previewHeight)
                 .background(previewBackdrop)
                 .clipped()
+                .overlay {
+                    if item.previewState == .pending, photo == nil {
+                        Text("Fetching preview…")
+                            .font(.caption)
+                            .foregroundStyle(Theme.secondary(scheme))
+                    }
+                }
             VStack(alignment: .leading, spacing: 6) {
                 Text(item.title)
                     .font(item.kind == .book || item.kind == .research ? .system(.headline, design: .serif) : .headline)
@@ -426,7 +433,7 @@ struct ItemPreview: View {
                             Button("Restore") { model.restoreSelected() }
                                 .frame(minHeight: 36)
                         } else {
-                            Button("Move to Trash") { model.trashSelected() }
+                            Button("Move to My Mind Trash") { model.trashSelected() }
                                 .foregroundStyle(Theme.danger(scheme))
                                 .frame(minHeight: 36)
                         }
@@ -596,9 +603,10 @@ private struct CardTrashButton: View {
                 .frame(width: 28, height: 28)
                 .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
-        .help("Move to Trash")
-        .accessibilityLabel("Move to Trash")
+        .buttonStyle(.borderless)
+        .help("Move to My Mind Trash")
+        .accessibilityLabel("Move to My Mind Trash")
+        .accessibilityHint("Removes this item from the library. It does not use the Mac Trash.")
     }
 }
 

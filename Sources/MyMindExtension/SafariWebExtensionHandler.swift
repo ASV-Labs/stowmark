@@ -39,6 +39,12 @@ final class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
                 return encode(result, requestID: requestID)
             }
 
+            if action == "saveImage" {
+                let result = try captureImage(message, requestID: requestID, store: store)
+                CaptureHandshake.write(result, requestID: requestID)
+                return encode(result, requestID: requestID)
+            }
+
             let pageURL = message["pageURL"] as? String
             let title = message["title"] as? String
             let note = message["note"] as? String
@@ -81,6 +87,22 @@ final class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
             }
             return encode(.failed("Not saved. Open My Mind once so Safari can share the library."), requestID: requestID)
         }
+    }
+
+    private func captureImage(_ message: [String: Any], requestID: UUID, store: LibraryStore) throws -> CaptureResult {
+        guard let encoded = message["bytes"] as? String, let data = Data(base64Encoded: encoded), !data.isEmpty else {
+            return .failed("Not saved. The image could not be read.")
+        }
+        let filename = (message["filename"] as? String).flatMap { $0.isEmpty ? nil : $0 } ?? "image"
+        let request = CaptureRequest(
+            requestID: requestID,
+            captureKind: .image,
+            pageURL: message["pageURL"] as? String,
+            capturedTitle: message["title"] as? String ?? filename,
+            origin: "safari",
+            file: CaptureFile(filename: filename, declaredMIME: nil, bytes: data)
+        )
+        return try store.capture(request)
     }
 
     private func lookupReceipt(requestID: UUID) -> CaptureResult {

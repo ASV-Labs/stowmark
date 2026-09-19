@@ -27,7 +27,7 @@ struct MyMindApp: App {
                     .keyboardShortcut("f", modifiers: .command)
                 Button("Open Selected") { model.openSelected() }
                     .keyboardShortcut("o", modifiers: .command)
-                Button("Move Selected to Trash") { model.trashSelected() }
+                Button("Move Selected to My Mind Trash") { model.trashSelected() }
                     .keyboardShortcut(.delete, modifiers: .command)
                 Button("Undo Last Save") { model.undoLastCapture() }
                     .keyboardShortcut("z", modifiers: .command)

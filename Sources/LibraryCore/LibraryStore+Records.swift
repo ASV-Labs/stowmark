@@ -463,6 +463,12 @@ extension LibraryStore {
             .text(key(request.requestID)), .int(Int64(request.schemaVersion)), .text(request.origin),
             .text(itemID), .text(status.rawValue), .text(retention.rawValue), .text(stamp(Date())),
         ])
+        if request.file == nil, let data = try? JSONEncoder().encode(CapturePayload(request)), let json = String(data: data, encoding: .utf8) {
+            try db.execute(
+                "INSERT OR REPLACE INTO capture_payloads(request_id, payload) VALUES(?, ?)",
+                [.text(key(request.requestID)), .text(json)]
+            )
+        }
     }
 
     private func applyUserTags(_ labels: [String], itemID: String, domain: String? = nil) throws {

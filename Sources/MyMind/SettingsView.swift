@@ -72,7 +72,7 @@ struct SettingsView: View {
                         get: { model.openPreviewOnSelect },
                         set: { model.setOpenPreviewOnSelect($0) }
                     ))
-                    Toggle("Confirm before moving to Trash", isOn: Binding(
+                    Toggle("Confirm before moving to My Mind Trash", isOn: Binding(
                         get: { model.confirmTrash },
                         set: { model.setConfirmTrash($0) }
                     ))

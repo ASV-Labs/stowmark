@@ -340,4 +340,33 @@ final class LibraryCoreTests: XCTestCase {
         XCTAssertEqual(try store.receipt(requestID: requestID)?.status, .saved)
         XCTAssertEqual(try store.receipt(requestID: requestID)?.itemID, saved.itemID)
     }
+
+    func testSafariSaveWhileClosedIsAbsorbedIntoTheAppLibrary() throws {
+        let support = root.appendingPathComponent("support", isDirectory: true)
+        let shared = root.appendingPathComponent("shared", isDirectory: true)
+        try FileManager.default.createDirectory(at: support, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: shared, withIntermediateDirectories: true)
+        let app = try LibraryStore(root: support)
+        _ = try app.capture(CaptureRequest(captureKind: .link, targetURL: "https://example.com/already", capturedTitle: "Already here", origin: "test"))
+        try LibraryReplica.replicate(from: support, to: shared)
+        let safari = try LibraryStore(root: shared)
+        let saved = try safari.capture(CaptureRequest(
+            captureKind: .page,
+            pageURL: "https://example.com/from-safari",
+            capturedTitle: "Saved while closed",
+            origin: "safari"
+        ))
+        XCTAssertEqual(saved.status, .saved)
+        let absorbed = try app.absorbPayloads(from: safari)
+        XCTAssertEqual(absorbed, 1)
+        XCTAssertEqual(try app.counts().all, 2)
+        let found = try app.items(matching: {
+            var query = LibraryQuery()
+            query.text = "while closed"
+            query.order = .relevance
+            return query
+        }())
+        XCTAssertEqual(found.first?.title, "Saved while closed")
+        XCTAssertEqual(try app.absorbPayloads(from: safari), 0)
+    }
 }

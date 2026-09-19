@@ -151,6 +151,57 @@ public struct CaptureFile: Sendable {
     }
 }
 
+public struct CapturePayload: Codable, Sendable, Equatable {
+    public var schemaVersion: Int
+    public var requestID: String
+    public var captureKind: String
+    public var pageURL: String?
+    public var targetURL: String?
+    public var capturedTitle: String?
+    public var selectionText: String?
+    public var note: String?
+    public var tags: [String]
+    public var shelfName: String?
+    public var origin: String
+
+    public init(_ request: CaptureRequest) {
+        schemaVersion = request.schemaVersion
+        requestID = request.requestID.uuidString
+        captureKind = request.captureKind.rawValue
+        pageURL = request.pageURL
+        targetURL = request.targetURL
+        capturedTitle = request.capturedTitle
+        selectionText = request.selectionText
+        note = request.note
+        tags = request.tags
+        shelfName = request.shelfName
+        origin = request.origin
+    }
+
+    public func request() -> CaptureRequest? {
+        guard let id = UUID(uuidString: requestID), let kind = CaptureKind(rawValue: captureKind) else { return nil }
+        return CaptureRequest(
+            schemaVersion: schemaVersion,
+            requestID: id,
+            captureKind: kind,
+            pageURL: pageURL,
+            targetURL: targetURL,
+            capturedTitle: capturedTitle,
+            selectionText: selectionText,
+            note: note,
+            tags: tags,
+            shelfName: shelfName,
+            origin: origin
+        )
+    }
+
+    public static func decode(_ json: String) -> CaptureRequest? {
+        guard let data = json.data(using: .utf8),
+              let payload = try? JSONDecoder().decode(CapturePayload.self, from: data) else { return nil }
+        return payload.request()
+    }
+}
+
 public struct CaptureRequest: Sendable {
     public var schemaVersion: Int
     public var requestID: UUID
@@ -394,13 +445,14 @@ public enum LibraryReplica {
     }
 
     /// Snapshot `from` into `to` with SQLite backup + asset copy. Never deletes `from`.
-    /// Refuses to overwrite a destination that already has items.
-    public static func replicate(from source: URL, to destination: URL) throws {
+    /// Refuses to overwrite a destination that already has items unless `replacingExisting` is set,
+    /// in which case the destination is backed up and restored if verification fails.
+    public static func replicate(from source: URL, to destination: URL, replacingExisting: Bool = false) throws {
         let fm = FileManager.default
         guard hasDatabase(at: source) else {
             throw LibraryError.migration("There is no library to copy.")
         }
-        if hasDatabase(at: destination), !looksEmpty(at: destination) {
+        if hasDatabase(at: destination), !looksEmpty(at: destination), !replacingExisting {
             throw LibraryError.migration("The other library already has items, so it was left untouched.")
         }
 

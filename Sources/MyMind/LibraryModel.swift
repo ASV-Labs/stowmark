@@ -508,12 +508,140 @@ final class LibraryModel {
 
     func importDropped(_ urls: [URL]) {
         for url in urls {
-            importFile(url)
+            if url.isFileURL {
+                importFile(url)
+            } else if url.scheme == "http" || url.scheme == "https" {
+                captureLink(url.absoluteString, origin: "drop")
+            } else {
+                showFailure("Not saved. Drop a web link, image, PDF, or text.")
+            }
         }
+    }
+
+    static let dropTypes: [UTType] = [
+        .fileURL, .url, .png, .jpeg, .tiff, .gif, .pdf, .image, .plainText, .utf8PlainText, .html,
+    ]
+
+    @discardableResult
+    func acceptDrop(_ providers: [NSItemProvider]) -> Bool {
+        guard !providers.isEmpty else { return false }
+        Task { @MainActor in
+            for provider in providers {
+                await ingestDrop(provider)
+            }
+        }
+        return true
+    }
+
+    private func ingestDrop(_ provider: NSItemProvider) async {
+        if let url = await droppedURL(provider, type: .fileURL) {
+            if url.isFileURL {
+                importFile(url)
+            } else {
+                captureLink(url.absoluteString, origin: "drop")
+            }
+            return
+        }
+        if let url = await droppedURL(provider, type: .url) {
+            captureLink(url.absoluteString, origin: "drop")
+            return
+        }
+        for type in [UTType.pdf, .png, .jpeg, .tiff, .gif, .image] where provider.hasItemConformingToTypeIdentifier(type.identifier) {
+            if let data = await droppedData(provider, type: type) {
+                ingestDroppedData(data, type: type)
+                return
+            }
+        }
+        if let text = await droppedText(provider) {
+            let first = text.split(whereSeparator: \.isNewline).first.map(String.init) ?? text
+            let address = Self.normalizedWebAddress(first)
+            if address.lowercased().hasPrefix("http://") || address.lowercased().hasPrefix("https://") {
+                captureLink(address, origin: "drop")
+            } else {
+                showFailure("Not saved. Drop text from a web page so the source is kept, or drop the page link.")
+            }
+        }
+    }
+
+    private func ingestDroppedData(_ data: Data, type: UTType) {
+        if type == .pdf || FileSignaturePeek.isPDF(data) {
+            guard let store else { return }
+            let request = CaptureRequest(
+                captureKind: .pdf,
+                capturedTitle: "Dropped PDF",
+                origin: "drop",
+                file: CaptureFile(filename: "Dropped.pdf", declaredMIME: "application/pdf", bytes: data)
+            )
+            runCapture(request, store: store)
+            return
+        }
+        if let image = NSImage(data: data),
+           let tiff = image.tiffRepresentation,
+           let bitmap = NSBitmapImageRep(data: tiff),
+           let png = bitmap.representation(using: .png, properties: [:]) {
+            captureImageData(png, filename: "Dropped.png", origin: "drop")
+            return
+        }
+        showFailure("Not saved. My Mind can copy JPEG, PNG, HEIC, and PDF files.")
+    }
+
+    private func droppedURL(_ provider: NSItemProvider, type: UTType) async -> URL? {
+        guard provider.hasItemConformingToTypeIdentifier(type.identifier) else { return nil }
+        return await withCheckedContinuation { continuation in
+            provider.loadItem(forTypeIdentifier: type.identifier, options: nil) { item, _ in
+                continuation.resume(returning: Self.url(fromDropItem: item))
+            }
+        }
+    }
+
+    private func droppedData(_ provider: NSItemProvider, type: UTType) async -> Data? {
+        await withCheckedContinuation { continuation in
+            provider.loadDataRepresentation(forTypeIdentifier: type.identifier) { data, _ in
+                continuation.resume(returning: data)
+            }
+        }
+    }
+
+    private func droppedText(_ provider: NSItemProvider) async -> String? {
+        let type = provider.hasItemConformingToTypeIdentifier(UTType.utf8PlainText.identifier) ? UTType.utf8PlainText : UTType.plainText
+        guard provider.hasItemConformingToTypeIdentifier(type.identifier) else { return nil }
+        return await withCheckedContinuation { continuation in
+            provider.loadItem(forTypeIdentifier: type.identifier, options: nil) { item, _ in
+                if let text = item as? String {
+                    continuation.resume(returning: text)
+                } else if let data = item as? Data {
+                    continuation.resume(returning: String(data: data, encoding: .utf8))
+                } else {
+                    continuation.resume(returning: nil)
+                }
+            }
+        }
+    }
+
+    nonisolated private static func url(fromDropItem item: NSSecureCoding?) -> URL? {
+        if let url = item as? URL { return url }
+        if let text = item as? String {
+            return URL(string: text.trimmingCharacters(in: .whitespacesAndNewlines))
+        }
+        if let data = item as? Data {
+            if let url = URL(dataRepresentation: data, relativeTo: nil) { return url }
+            if let text = String(data: data, encoding: .utf8) {
+                return URL(string: text.trimmingCharacters(in: .whitespacesAndNewlines))
+            }
+        }
+        return nil
     }
 
     func importFile(_ url: URL) {
         guard let store else { return }
+        if !url.isFileURL {
+            if url.scheme == "http" || url.scheme == "https" {
+                captureLink(url.absoluteString, origin: "drop")
+            } else {
+                showFailure("Not saved. Drop a web link, image, PDF, or text.")
+            }
+            return
+        }
         let accessing = url.startAccessingSecurityScopedResource()
         defer { if accessing { url.stopAccessingSecurityScopedResource() } }
         let ext = url.pathExtension.lowercased()
@@ -588,17 +716,17 @@ final class LibraryModel {
 
     func trashSelected() {
         guard let id = selectedItemID ?? previewItemID else { return }
-        trashItem(id)
+        trashItem(id, confirm: confirmTrash)
     }
 
-    func trashItem(_ id: UUID) {
+    func trashItem(_ id: UUID, confirm: Bool? = nil) {
         guard let store else { return }
-        if confirmTrash {
+        if confirm ?? confirmTrash {
             let alert = NSAlert()
-            alert.messageText = "Move to Trash?"
-            alert.informativeText = "You can restore it from Trash for \(Limits.trashDays) days."
-            alert.alertStyle = .warning
-            alert.addButton(withTitle: "Move to Trash")
+            alert.messageText = "Move to My Mind Trash?"
+            alert.informativeText = "This stays in My Mind. It does not go to the Mac Trash. You can restore it from the Trash shelf for \(Limits.trashDays) days."
+            alert.alertStyle = .informational
+            alert.addButton(withTitle: "Move to My Mind Trash")
             alert.addButton(withTitle: "Cancel")
             guard alert.runModal() == .alertFirstButtonReturn else { return }
         }
@@ -610,6 +738,8 @@ final class LibraryModel {
         }
         if selectedItemID == id { selectedItemID = nil }
         if previewItemID == id { previewItemID = nil }
+        captureFailed = false
+        captureMessage = "Moved to My Mind Trash."
         reload()
     }
 
@@ -812,11 +942,19 @@ final class LibraryModel {
         if let id = result.itemID {
             selectedItemID = id
             if place == .trash { place = .all }
+            attachPDFCover(id)
         }
         reload()
         if result.status == .saved {
             Task { await enrichPending() }
         }
+    }
+
+    private func attachPDFCover(_ id: UUID) {
+        guard let store, let item = try? store.item(id: id), item.retention == .copiedPDF,
+              let asset = item.originalAsset,
+              let cover = Thumbnail.pdfCover(at: asset.fileURL(in: store.rootURL)) else { return }
+        try? store.attachPreview(itemID: id, data: cover)
     }
 
     private func showFailure(_ message: String) {

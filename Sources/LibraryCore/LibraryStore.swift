@@ -65,7 +65,25 @@ public final class LibraryStore: @unchecked Sendable {
                     return opened
                 }
             } else if !LibraryReplica.looksEmpty(at: shared) {
-                try? Data("diverged".utf8).write(to: StorageLocator.divergedMarker(in: shared), options: .atomic)
+                var absorbed = false
+                do {
+                    let source = try LibraryStore(root: shared)
+                    let destination = try LibraryStore(root: support)
+                    _ = try destination.absorbPayloads(from: source)
+                    absorbed = true
+                } catch {
+                    absorbed = false
+                }
+                if absorbed {
+                    do {
+                        try LibraryReplica.replicate(from: support, to: shared, replacingExisting: true)
+                        try? FileManager.default.removeItem(at: StorageLocator.divergedMarker(in: shared))
+                    } catch {
+                        try? Data("diverged".utf8).write(to: StorageLocator.divergedMarker(in: shared), options: .atomic)
+                    }
+                } else {
+                    try? Data("diverged".utf8).write(to: StorageLocator.divergedMarker(in: shared), options: .atomic)
+                }
             }
         }
 
@@ -115,6 +133,47 @@ public final class LibraryStore: @unchecked Sendable {
 
     public func receipt(requestID: UUID) throws -> CaptureResult? {
         try sync { try receiptLocked(requestID) }
+    }
+
+    public func savedPayloads() throws -> [CaptureRequest] {
+        try sync {
+            let rows = try db.query("SELECT payload FROM capture_payloads")
+            return rows.compactMap { row in
+                row.string("payload").flatMap(CapturePayload.decode)
+            }
+        }
+    }
+
+    /// Replay link and excerpt saves that exist in `source` but not here. File bytes are not stored in the payload.
+    public func absorbPayloads(from source: LibraryStore) throws -> Int {
+        let payloads = try source.savedPayloads()
+        var absorbed = 0
+        for request in payloads {
+            if try receipt(requestID: request.requestID) != nil { continue }
+            let result = try capture(request)
+            if result.status == .saved || result.status == .alreadySaved {
+                absorbed += 1
+            }
+        }
+        return absorbed
+    }
+
+    public func attachPreview(itemID: UUID, data: Data) throws {
+        try sync {
+            guard data.count <= Limits.maxPreviewBytes,
+                  let signature = FileSignature.sniff(data),
+                  signature == .png || signature == .jpeg else { return }
+            try requireItem(itemID)
+            let staged = try stage(data: data, folder: "assets/previews")
+            try db.execute("DELETE FROM assets WHERE item_id = ? AND role = 'preview'", [.text(key(itemID))])
+            try db.execute(
+                "INSERT INTO assets(id, item_id, sha256, relative_path, mime_type, byte_count, role) VALUES(?, ?, ?, ?, ?, ?, 'preview')",
+                [.text(staged.id), .text(key(itemID)), .text(staged.hash), .text(staged.relative), .text(signature.mime), .int(Int64(data.count))]
+            )
+            try db.execute("UPDATE items SET preview_state = 'ready', updated_at = ? WHERE id = ?", [
+                .text(stamp(Date())), .text(key(itemID)),
+            ])
+        }
     }
 
     public func capture(_ request: CaptureRequest) throws -> CaptureResult {
@@ -726,6 +785,15 @@ public final class LibraryStore: @unchecked Sendable {
             );
             """)
             try db.setUserVersion(2)
+        }
+        if try db.userVersion < 3 {
+            try db.execute("""
+            CREATE TABLE IF NOT EXISTS capture_payloads (
+                request_id TEXT PRIMARY KEY,
+                payload TEXT NOT NULL
+            );
+            """)
+            try db.setUserVersion(3)
         }
     }
 }

@@ -26,7 +26,16 @@
     "persistent": false
   },
   "permissions": ["activeTab", "nativeMessaging", "contextMenus"],
-  "host_permissions": [],
+  "host_permissions": ["<all_urls>"],
+  "commands": {
+    "save-page": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+S",
+        "mac": "Command+Shift+S"
+      },
+      "description": "Save page to My Mind"
+    }
+  },
   "content_scripts": [{
     "js": ["content.js"],
     "matches": ["http://*/*", "https://*/*"]
