@@ -8,8 +8,13 @@ struct ItemCard: View {
     var root: URL?
     var size: CardSize
     var onTrash: (() -> Void)? = nil
+    var onFavorite: (() -> Void)? = nil
+    var onOpen: (() -> Void)? = nil
     @Environment(\.colorScheme) private var scheme
     @Environment(\.colorSchemeContrast) private var contrast
+    @State private var hovered = false
+    @State private var thumbnailLoaded = false
+    @State private var thumbnailSettled = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -19,7 +24,7 @@ struct ItemCard: View {
                 .background(previewBackdrop)
                 .clipped()
                 .overlay {
-                    if item.previewState == .pending, photo == nil {
+                    if showsFetchingPreview {
                         Text("Fetching preview…")
                             .font(.caption)
                             .foregroundStyle(Theme.secondary(scheme))
@@ -51,10 +56,22 @@ struct ItemCard: View {
                 .stroke(selected ? Theme.accent(scheme) : Theme.line(scheme, increased: contrast == .increased), lineWidth: selected ? 2 : 1)
         )
         .overlay(alignment: .bottomTrailing) {
-            if item.trashedAt == nil, let onTrash {
-                CardTrashButton(action: onTrash)
-                    .padding(8)
+            if item.trashedAt == nil {
+                CardQuickActions(
+                    favorite: item.favorite,
+                    opensFile: item.originalAsset != nil,
+                    hovered: hovered,
+                    onFavorite: onFavorite,
+                    onOpen: onOpen,
+                    onTrash: onTrash,
+                    inset: 8
+                )
             }
+        }
+        .onHover { hovered = $0 }
+        .onPreferenceChange(ThumbnailStatusKey.self) { status in
+            thumbnailLoaded = status.loaded
+            thumbnailSettled = status.settled
         }
         .accessibilityElement(children: .contain)
         .accessibilityLabel(accessibilityText)
@@ -69,7 +86,7 @@ struct ItemCard: View {
         case .book:
             bookPreview
         case .image:
-            if let fittedPhoto { fittedPhoto } else { imagePlaceholder }
+            photoZone(padding: 8) { imagePlaceholder }
         case .excerpt:
             excerptPreview
         case .document:
@@ -79,9 +96,51 @@ struct ItemCard: View {
         case .social:
             socialPreview
         case .article:
-            if let fittedPhoto { fittedPhoto } else { articleMasthead }
+            photoZone { articleMasthead }
         case .link:
-            if let fittedPhoto { fittedPhoto } else { typographicTile }
+            photoZone { typographicTile }
+        }
+    }
+
+    /// Point size of the card preview zone. The cache decodes about 2× this, not the original.
+    private var thumbnailPointSize: CGFloat { size.previewHeight }
+
+    /// Pending enrichment with nothing to show. A thumbnail that is still decoding does not count as missing.
+    @MainActor
+    private var showsFetchingPreview: Bool {
+        guard item.previewState == .pending, !hasThumbnail else { return false }
+        if cardPhotoAsset == nil { return true }
+        return thumbnailSettled
+    }
+
+    @MainActor
+    private var hasThumbnail: Bool {
+        if thumbnailLoaded { return true }
+        guard let asset = cardPhotoAsset else { return false }
+        return ImageCache.shared.peek(
+            sha256: asset.sha256,
+            minPixel: ImageCache.pixelLimit(forPointSize: thumbnailPointSize)
+        ) != nil
+    }
+
+    private var cardPhotoAsset: AssetRecord? {
+        let preferOriginal = item.kind == .image || item.kind == .book
+        if preferOriginal {
+            return item.originalAsset ?? item.previewAsset
+        }
+        return item.previewAsset ?? (item.kind == .image ? item.originalAsset : nil)
+    }
+
+    @ViewBuilder
+    private func photoZone<Fallback: View>(padding: CGFloat = 0, @ViewBuilder fallback: () -> Fallback) -> some View {
+        if let asset = cardPhotoAsset {
+            AsyncThumbnail(asset: asset, root: root, maxPointSize: thumbnailPointSize) {
+                fallback()
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .padding(padding)
+        } else {
+            fallback()
         }
     }
 
@@ -95,17 +154,6 @@ struct ItemCard: View {
         }
     }
 
-    @ViewBuilder
-    private var fittedPhoto: some View? {
-        if let photo {
-            photo
-                .resizable()
-                .scaledToFit()
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .padding(item.kind == .image ? 8 : 0)
-        }
-    }
-
     private var bookPreview: some View {
         let coverWidth = size.previewHeight * 0.68
         let coverHeight = size.previewHeight - 16
@@ -114,22 +162,26 @@ struct ItemCard: View {
                 .fill(Theme.accent(scheme))
                 .frame(width: coverWidth, height: coverHeight)
                 .shadow(color: Theme.ink(scheme).opacity(0.16), radius: 8, y: 4)
-            if let photo {
-                photo
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: coverWidth, height: coverHeight)
-                    .clipShape(RoundedRectangle(cornerRadius: 4))
+            if let asset = cardPhotoAsset {
+                AsyncThumbnail(asset: asset, root: root, maxPointSize: thumbnailPointSize) {
+                    bookCoverTitle(coverWidth: coverWidth, coverHeight: coverHeight)
+                }
+                .frame(width: coverWidth, height: coverHeight)
+                .clipShape(RoundedRectangle(cornerRadius: 4))
             } else {
-                Text(item.title)
-                    .font(.system(.caption, design: .serif))
-                    .foregroundStyle(Theme.onAccent(scheme))
-                    .multilineTextAlignment(.leading)
-                    .lineLimit(5)
-                    .frame(width: coverWidth - 16, height: coverHeight - 12, alignment: .topLeading)
+                bookCoverTitle(coverWidth: coverWidth, coverHeight: coverHeight)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private func bookCoverTitle(coverWidth: CGFloat, coverHeight: CGFloat) -> some View {
+        Text(item.title)
+            .font(.system(.caption, design: .serif))
+            .foregroundStyle(Theme.onAccent(scheme))
+            .multilineTextAlignment(.leading)
+            .lineLimit(5)
+            .frame(width: coverWidth - 16, height: coverHeight - 12, alignment: .topLeading)
     }
 
     private var excerptPreview: some View {
@@ -203,7 +255,14 @@ struct ItemCard: View {
                         .font(.headline)
                         .foregroundStyle(Theme.ink(scheme))
                 }
-            if let fittedPhoto { fittedPhoto } else { Spacer(minLength: 0) }
+            if let asset = cardPhotoAsset {
+                AsyncThumbnail(asset: asset, root: root, maxPointSize: thumbnailPointSize) {
+                    Spacer(minLength: 0)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                Spacer(minLength: 0)
+            }
         }
         .padding(12)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
@@ -304,16 +363,6 @@ struct ItemCard: View {
         .frame(height: 22)
     }
 
-    private var photo: Image? {
-        guard let root else { return nil }
-        let preferOriginal = item.kind == .image || item.kind == .book
-        let asset = preferOriginal
-            ? (item.originalAsset ?? item.previewAsset)
-            : (item.previewAsset ?? (item.kind == .image ? item.originalAsset : nil))
-        guard let asset, let image = NSImage(contentsOf: asset.fileURL(in: root)) else { return nil }
-        return Image(nsImage: image)
-    }
-
     private var retentionLine: String {
         if item.retention == .bookmark && item.previewState == .unavailable {
             return "Preview unavailable"
@@ -338,8 +387,10 @@ struct ItemPreview: View {
     @Environment(\.colorScheme) private var scheme
     @State private var title: String = ""
     @State private var note: String = ""
+    @State private var committedNote: String = ""
     @State private var tagDraft = ""
     @State private var showDetails = false
+    @State private var noteSaveTask: Task<Void, Never>?
 
     var body: some View {
         ScrollView {
@@ -398,10 +449,18 @@ struct ItemPreview: View {
                         .frame(minHeight: 32)
                     }
                 }
-                Button(item.originalAsset == nil ? "Open original" : "Open saved file") { model.openOriginal(item) }
-                    .buttonStyle(.borderedProminent)
-                    .tint(Theme.accent(scheme))
-                    .frame(minHeight: 44)
+                HStack(spacing: 8) {
+                    Button(item.originalAsset == nil ? "Open original" : "Open saved file") { model.openOriginal(item) }
+                        .buttonStyle(.borderedProminent)
+                        .tint(Theme.accent(scheme))
+                        .frame(minHeight: 44)
+                    if let link = copyableLink {
+                        Button("Copy link") { copyLink(link) }
+                            .buttonStyle(.bordered)
+                            .frame(minHeight: 44)
+                            .help("Copy the original link")
+                    }
+                }
                 DisclosureGroup("Edit details", isExpanded: $showDetails) {
                     VStack(alignment: .leading, spacing: 10) {
                         TextField("Title", text: $title, axis: .vertical)
@@ -444,32 +503,88 @@ struct ItemPreview: View {
             .padding(18)
         }
         .onAppear {
+            adoptNote(from: item, flushPreviousID: nil)
             title = item.title
-            note = item.note ?? ""
         }
-        .onChange(of: item.id) { _, _ in
+        .onChange(of: item.id) { oldID, _ in
+            adoptNote(from: item, flushPreviousID: oldID)
             title = item.title
-            note = item.note ?? ""
+        }
+        .onChange(of: note) { _, _ in
+            scheduleNoteSave()
         }
         .onDisappear {
+            noteSaveTask?.cancel()
             if title != item.title { model.saveTitle(item.id, title) }
             if note != (item.note ?? "") { model.saveNote(item.id, note) }
         }
     }
 
+    private var copyableLink: String? {
+        guard let raw = item.originalURL?.trimmingCharacters(in: .whitespacesAndNewlines), !raw.isEmpty else { return nil }
+        return raw
+    }
+
+    @MainActor
+    private func copyLink(_ raw: String) {
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        if let url = URL(string: raw) {
+            pasteboard.writeObjects([url as NSURL])
+        } else {
+            pasteboard.setString(raw, forType: .string)
+        }
+    }
+
+    @MainActor
+    private func adoptNote(from item: SavedItem, flushPreviousID: UUID?) {
+        noteSaveTask?.cancel()
+        if let flushPreviousID, note != committedNote {
+            model.saveNote(flushPreviousID, note)
+        }
+        note = item.note ?? ""
+        committedNote = note
+    }
+
+    @MainActor
+    private func scheduleNoteSave() {
+        noteSaveTask?.cancel()
+        let draft = note
+        guard draft != committedNote else { return }
+        let itemID = item.id
+        noteSaveTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(600))
+            guard !Task.isCancelled else { return }
+            model.saveNote(itemID, draft)
+            if item.id == itemID {
+                committedNote = draft
+            }
+        }
+    }
+
     @ViewBuilder private var object: some View {
-        if let root = model.store?.rootURL,
-           let asset = item.kind == .image || item.kind == .book
+        if let asset = previewImageAsset, let root = model.store?.rootURL {
+            AsyncThumbnail(asset: asset, root: root, maxPointSize: 420) {
+                objectFallback
+            }
+            .frame(maxWidth: .infinity)
+            .clipShape(RoundedRectangle(cornerRadius: item.kind == .book ? 4 : Theme.Radius.card))
+        } else {
+            objectFallback
+        }
+    }
+
+    private var previewImageAsset: AssetRecord? {
+        let candidate = item.kind == .image || item.kind == .book
             ? (item.originalAsset ?? item.previewAsset)
-            : (item.previewAsset ?? item.originalAsset),
-           let image = NSImage(contentsOf: asset.fileURL(in: root)),
-           item.kind == .image || item.kind == .book || item.previewAsset != nil {
-            Image(nsImage: image)
-                .resizable()
-                .scaledToFit()
-                .frame(maxWidth: .infinity)
-                .clipShape(RoundedRectangle(cornerRadius: item.kind == .book ? 4 : Theme.Radius.card))
-        } else if item.kind == .book {
+            : (item.previewAsset ?? item.originalAsset)
+        guard let candidate else { return nil }
+        guard item.kind == .image || item.kind == .book || item.previewAsset != nil else { return nil }
+        return candidate
+    }
+
+    @ViewBuilder private var objectFallback: some View {
+        if item.kind == .book {
             RoundedRectangle(cornerRadius: 4)
                 .fill(Theme.accent(scheme))
                 .frame(width: 120, height: 168)
@@ -505,20 +620,23 @@ struct CoverTile: View {
     var root: URL?
     var size: CGFloat
     var onTrash: (() -> Void)? = nil
+    var onFavorite: (() -> Void)? = nil
+    var onOpen: (() -> Void)? = nil
     @Environment(\.colorScheme) private var scheme
     @Environment(\.colorSchemeContrast) private var contrast
+    @State private var hovered = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             ZStack(alignment: .bottomLeading) {
                 RoundedRectangle(cornerRadius: Theme.Radius.card)
                     .fill(Theme.sidebar(scheme))
-                if let image = coverImage {
-                    image
-                        .resizable()
-                        .scaledToFit()
-                        .frame(maxWidth: size, maxHeight: size)
-                        .padding(item.kind == .book ? 10 : 0)
+                if let asset = coverAsset {
+                    AsyncThumbnail(asset: asset, root: root, maxPointSize: size) {
+                        typographicCover
+                    }
+                    .frame(maxWidth: size, maxHeight: size)
+                    .padding(item.kind == .book ? 10 : 0)
                 } else {
                     typographicCover
                 }
@@ -543,9 +661,16 @@ struct CoverTile: View {
                     .stroke(selected ? Theme.accent(scheme) : Theme.line(scheme, increased: contrast == .increased), lineWidth: selected ? 2 : 1)
             )
             .overlay(alignment: .bottomTrailing) {
-                if item.trashedAt == nil, let onTrash {
-                    CardTrashButton(action: onTrash)
-                        .padding(6)
+                if item.trashedAt == nil {
+                    CardQuickActions(
+                        favorite: item.favorite,
+                        opensFile: item.originalAsset != nil,
+                        hovered: hovered,
+                        onFavorite: onFavorite,
+                        onOpen: onOpen,
+                        onTrash: onTrash,
+                        inset: 6
+                    )
                 }
             }
             if !selected {
@@ -556,19 +681,18 @@ struct CoverTile: View {
                     .frame(width: size, alignment: .leading)
             }
         }
+        .onHover { hovered = $0 }
         .accessibilityElement(children: .contain)
         .accessibilityLabel("\(item.kind.label), \(item.title), \(item.keptLabel)")
         .accessibilityAddTraits(.isButton)
         .accessibilityAddTraits(selected ? .isSelected : [])
     }
 
-    private var coverImage: Image? {
-        guard let root else { return nil }
-        let asset = item.kind == .image || item.kind == .book
-            ? (item.originalAsset ?? item.previewAsset)
-            : item.previewAsset
-        guard let asset, let image = NSImage(contentsOf: asset.fileURL(in: root)) else { return nil }
-        return Image(nsImage: image)
+    private var coverAsset: AssetRecord? {
+        if item.kind == .image || item.kind == .book {
+            return item.originalAsset ?? item.previewAsset
+        }
+        return item.previewAsset
     }
 
     private var typographicCover: some View {
@@ -588,6 +712,57 @@ struct CoverTile: View {
         .padding(12)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(Theme.wash(item.sourceLabel, scheme))
+    }
+}
+
+private struct CardQuickActions: View {
+    var favorite: Bool
+    var opensFile: Bool
+    var hovered: Bool
+    var onFavorite: (() -> Void)?
+    var onOpen: (() -> Void)?
+    var onTrash: (() -> Void)?
+    var inset: CGFloat
+    @Environment(\.colorScheme) private var scheme
+
+    var body: some View {
+        HStack(spacing: 0) {
+            quickButton(
+                systemName: favorite ? "star.fill" : "star",
+                help: favorite ? "Unfavorite" : "Favorite",
+                label: favorite ? "Unfavorite" : "Favorite",
+                enabled: onFavorite != nil,
+                action: { onFavorite?() }
+            )
+            quickButton(
+                systemName: "arrow.up.right.square",
+                help: opensFile ? "Open saved file" : "Open original",
+                label: opensFile ? "Open saved file" : "Open original",
+                enabled: onOpen != nil,
+                action: { onOpen?() }
+            )
+            if let onTrash {
+                CardTrashButton(action: onTrash)
+            }
+        }
+        .padding(inset)
+    }
+
+    private func quickButton(systemName: String, help: String, label: String, enabled: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: systemName)
+                .font(.caption)
+                .foregroundStyle(Theme.secondary(scheme).opacity(enabled ? 1 : 0.35))
+                .frame(width: 28, height: 28)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.borderless)
+        .disabled(!enabled)
+        .opacity(hovered ? 1 : 0)
+        .accessibilityOpacity(1)
+        .allowsHitTesting(hovered)
+        .help(help)
+        .accessibilityLabel(label)
     }
 }
 
