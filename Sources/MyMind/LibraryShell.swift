@@ -16,19 +16,56 @@ struct LibraryShell: View {
     @State private var tableSort: [KeyPathComparator<SavedItem>] = [
         KeyPathComparator(\.createdAt, order: .reverse)
     ]
+    @State private var columnVisibility: NavigationSplitViewVisibility = Self.storedColumnVisibility
+    @State private var detailWidth: CGFloat = 0
+    @State private var renamingShelfID: UUID?
+    @State private var renameDraft = ""
+    @State private var showAllTags = false
+    @State private var dropShelfID: UUID?
+    @FocusState private var renameFocused: Bool
+    @FocusState private var shelfNameFocused: Bool
+
+    private static let sidebarCollapsedKey = "librarySidebarCollapsed"
+    private static let itemDragType = UTType(exportedAs: "com.charlesbonetti.mymind.saved-item")
+    private static let headerSorts: [HeaderSort] = [
+        HeaderSort(order: .recent, title: "Recent"),
+        HeaderSort(order: .title, title: "Title"),
+        HeaderSort(order: .source, title: "Source"),
+        HeaderSort(order: .kind, title: "Kind"),
+        HeaderSort(order: .kept, title: "Kept"),
+    ]
+
+    private static var storedColumnVisibility: NavigationSplitViewVisibility {
+        UserDefaults.standard.bool(forKey: sidebarCollapsedKey) ? .detailOnly : .all
+    }
+
+    private var keyboardBrowsingBlocked: Bool {
+        searchFocused || captureFocused || renameFocused || shelfNameFocused
+    }
 
     var body: some View {
         Group {
             if model.startupError != nil {
                 recovery
             } else {
-                HStack(spacing: 0) {
+                NavigationSplitView(columnVisibility: $columnVisibility) {
                     sidebar
-                    Rectangle()
-                        .fill(Theme.line(scheme, increased: contrast == .increased))
-                        .frame(width: 1)
+                } detail: {
                     detail
                 }
+                .navigationSplitViewStyle(.balanced)
+                .toolbar {
+                    ToolbarItem(placement: .navigation) {
+                        Button(action: toggleSidebar) {
+                            Label("Sidebar", systemImage: "sidebar.leading")
+                        }
+                        .labelStyle(.iconOnly)
+                        .keyboardShortcut("s", modifiers: [.command, .option])
+                        .help(columnVisibility == .detailOnly ? "Show sidebar" : "Hide sidebar")
+                        .accessibilityLabel(columnVisibility == .detailOnly ? "Show sidebar" : "Hide sidebar")
+                    }
+                }
+                .toolbarBackground(.visible, for: .windowToolbar)
             }
         }
         .background(Theme.canvas(scheme))
@@ -48,31 +85,78 @@ struct LibraryShell: View {
             importSheet
         }
         .onAppear {
+            tableSort = [Self.tableComparator(for: model.listOrder)]
             if model.allCount == 0 {
                 model.focusCapture()
             }
         }
+        .onChange(of: columnVisibility) { _, visibility in
+            UserDefaults.standard.set(visibility == .detailOnly, forKey: Self.sidebarCollapsedKey)
+        }
         .onOpenURL { model.handleIncomingURL($0) }
+        .sheet(isPresented: $showAllTags) {
+            allTagsSheet
+        }
+        .onKeyPress(.leftArrow) { handleHorizontal(-1) }
+        .onKeyPress(.rightArrow) { handleHorizontal(1) }
+        .onKeyPress(.home) { handleEdge(toEnd: false) }
+        .onKeyPress(.end) { handleEdge(toEnd: true) }
+        .onKeyPress(keys: [.delete], phases: [.down]) { press in
+            guard !press.modifiers.contains(.command), !keyboardBrowsingBlocked else { return .ignored }
+            model.trashSelected()
+            return .handled
+        }
+        .onKeyPress(keys: [.return], phases: [.down]) { press in
+            guard press.modifiers.contains(.command), !keyboardBrowsingBlocked else { return .ignored }
+            model.openSelected()
+            return .handled
+        }
+        .onKeyPress(keys: [KeyEquivalent("c")], phases: [.down]) { press in
+            guard press.modifiers.contains(.command),
+                  !press.modifiers.contains(.shift),
+                  !press.modifiers.contains(.option),
+                  !press.modifiers.contains(.control),
+                  !keyboardBrowsingBlocked else { return .ignored }
+            return model.copySelectedOriginalURL() ? .handled : .ignored
+        }
+        .onKeyPress(keys: [KeyEquivalent("z")], phases: [.down]) { press in
+            guard press.modifiers.contains(.command),
+                  press.modifiers.contains(.shift),
+                  !keyboardBrowsingBlocked else { return .ignored }
+            model.undoLastTrash()
+            return .handled
+        }
         .onDrop(of: LibraryModel.dropTypes, isTargeted: $dropTargeted) { providers in
             model.acceptDrop(providers)
         }
         .onKeyPress(.escape) {
+            if renameFocused {
+                cancelRename()
+                return .handled
+            }
             guard model.previewItemID != nil else { return .ignored }
             model.closePreview()
             return .handled
         }
         .onKeyPress(.space) {
-            guard !searchFocused, !captureFocused, model.previewItemID == nil else { return .ignored }
-            model.openPreview()
+            guard !keyboardBrowsingBlocked else { return .ignored }
+            if model.previewItemID != nil {
+                if NSApp.keyWindow?.firstResponder is NSTextView {
+                    return .ignored
+                }
+                model.closePreview()
+            } else {
+                model.openPreview()
+            }
             return .handled
         }
         .onKeyPress(.downArrow) {
-            guard !searchFocused, !captureFocused else { return .ignored }
+            guard !keyboardBrowsingBlocked else { return .ignored }
             model.moveSelection(1)
             return .handled
         }
         .onKeyPress(.upArrow) {
-            guard !searchFocused, !captureFocused else { return .ignored }
+            guard !keyboardBrowsingBlocked else { return .ignored }
             model.moveSelection(-1)
             return .handled
         }
@@ -108,11 +192,40 @@ struct LibraryShell: View {
                 .padding(.horizontal, 20)
                 .padding(.top, 18)
                 .padding(.bottom, 6)
-            ForEach(model.shelves) { shelf in
-                placeRow(shelf.name, count: shelf.itemCount, place: .shelf(shelf.id), symbol: "books.vertical")
-                    .contextMenu {
-                        Button("Remove shelf") { model.deleteShelf(shelf.id) }
+            if !model.shelves.isEmpty {
+                List {
+                    ForEach(model.shelves) { shelf in
+                        shelfRow(shelf)
+                            .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
                     }
+                    .onMove { source, destination in
+                        model.moveShelves(from: source, to: destination)
+                    }
+                }
+                .listStyle(.plain)
+                .scrollContentBackground(.hidden)
+                .environment(\.defaultMinListRowHeight, 32)
+                .frame(height: CGFloat(model.shelves.count) * 36)
+            }
+            if !model.tagCounts.isEmpty {
+                Text("Tags")
+                    .font(.caption)
+                    .foregroundStyle(Theme.secondary(scheme))
+                    .padding(.horizontal, 20)
+                    .padding(.top, 18)
+                    .padding(.bottom, 6)
+                ForEach(Array(model.tagCounts.prefix(20))) { tag in
+                    tagRow(tag)
+                }
+                Button("All tags…") { showAllTags = true }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(Theme.accent(scheme))
+                    .frame(minHeight: 32)
+                    .padding(.horizontal, 20)
+                    .padding(.top, 4)
+                    .accessibilityLabel("All tags")
             }
             Spacer()
             placeRow("Trash", count: model.trashCount, place: .trash, symbol: "trash")
@@ -133,6 +246,7 @@ struct LibraryShell: View {
             HStack(spacing: 8) {
                 TextField("New shelf", text: $shelfName)
                     .textFieldStyle(.plain)
+                    .focused($shelfNameFocused)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 6)
                     .background(Theme.card(scheme), in: RoundedRectangle(cornerRadius: Theme.Radius.chip))
@@ -145,22 +259,68 @@ struct LibraryShell: View {
             }
             .padding(12)
         }
-        .frame(width: 232)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(Theme.sidebar(scheme))
+        .navigationSplitViewColumnWidth(min: 200, ideal: 232, max: 320)
+        .toolbar(removing: .sidebarToggle)
     }
 
-    private func placeRow(_ title: String, count: Int, place: LibraryPlace, symbol: String) -> some View {
-        let selected = model.place == place
+    @ViewBuilder
+    private func shelfRow(_ shelf: Shelf) -> some View {
+        if renamingShelfID == shelf.id {
+            TextField("Shelf name", text: $renameDraft)
+                .textFieldStyle(.plain)
+                .focused($renameFocused)
+                .onSubmit { commitRename() }
+                .onExitCommand { cancelRename() }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .padding(.horizontal, 8)
+                .onAppear { renameFocused = true }
+        } else {
+            placeChrome(
+                title: shelf.name,
+                count: shelf.itemCount,
+                selected: model.place == .shelf(shelf.id),
+                symbol: "books.vertical"
+            )
+            .contentShape(Rectangle())
+            .onTapGesture { model.choose(.shelf(shelf.id)) }
+            .contextMenu {
+                Button("Rename") { beginRename(shelf) }
+                Button("Remove shelf") { model.deleteShelf(shelf.id) }
+            }
+            .simultaneousGesture(TapGesture(count: 2).onEnded { beginRename(shelf) })
+            .onDrop(of: [Self.itemDragType], isTargeted: shelfDropTargeted(shelf.id)) { providers in
+                acceptShelfDrop(providers, shelfID: shelf.id)
+            }
+            .overlay {
+                if dropShelfID == shelf.id {
+                    RoundedRectangle(cornerRadius: Theme.Radius.chip)
+                        .stroke(Theme.accent(scheme), lineWidth: 2)
+                        .padding(.horizontal, 8)
+                        .allowsHitTesting(false)
+                }
+            }
+            .accessibilityLabel("\(shelf.name), \(shelf.itemCount) items")
+            .accessibilityAddTraits(model.place == .shelf(shelf.id) ? [.isButton, .isSelected] : [.isButton])
+            .accessibilityAction(named: "Rename") { beginRename(shelf) }
+            .accessibilityAction { model.choose(.shelf(shelf.id)) }
+        }
+    }
+
+    private func tagRow(_ tag: TagCount) -> some View {
+        let selected = model.tagFilters.contains { $0.caseInsensitiveCompare(tag.label) == .orderedSame }
         return Button {
-            model.choose(place)
+            model.addTagFilter(tag.label)
         } label: {
             HStack(spacing: 8) {
-                Image(systemName: symbol)
+                Image(systemName: "tag")
                     .frame(width: 16)
-                Text(title)
+                Text(tag.label)
                     .lineLimit(1)
                 Spacer()
-                Text("\(count)")
+                Text("\(tag.count)")
                     .font(.caption)
                     .foregroundStyle(Theme.secondary(scheme))
             }
@@ -168,19 +328,50 @@ struct LibraryShell: View {
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
             .background(selected ? Theme.accentSoft(scheme) : Color.clear, in: RoundedRectangle(cornerRadius: Theme.Radius.chip))
-            .overlay(alignment: .leading) {
-                if selected {
-                    Capsule()
-                        .fill(Theme.accent(scheme))
-                        .frame(width: 3)
-                        .padding(.vertical, 8)
-                }
-            }
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal, 8)
+        .accessibilityLabel("\(tag.label), \(tag.count) items")
+        .accessibilityAddTraits(selected ? .isSelected : [])
+    }
+
+    private func placeRow(_ title: String, count: Int, place: LibraryPlace, symbol: String) -> some View {
+        let selected = model.place == place
+        return Button {
+            model.choose(place)
+        } label: {
+            placeChrome(title: title, count: count, selected: selected, symbol: symbol)
         }
         .buttonStyle(.plain)
         .padding(.horizontal, 8)
         .accessibilityLabel("\(title), \(count) items")
         .accessibilityAddTraits(selected ? .isSelected : [])
+    }
+
+    private func placeChrome(title: String, count: Int, selected: Bool, symbol: String) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: symbol)
+                .frame(width: 16)
+            Text(title)
+                .lineLimit(1)
+            Spacer()
+            Text("\(count)")
+                .font(.caption)
+                .foregroundStyle(Theme.secondary(scheme))
+        }
+        .foregroundStyle(selected ? Theme.ink(scheme) : Theme.secondary(scheme))
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(selected ? Theme.accentSoft(scheme) : Color.clear, in: RoundedRectangle(cornerRadius: Theme.Radius.chip))
+        .overlay(alignment: .leading) {
+            if selected {
+                Capsule()
+                    .fill(Theme.accent(scheme))
+                    .frame(width: 3)
+                    .padding(.vertical, 8)
+            }
+        }
+        .padding(.horizontal, 8)
     }
 
     private var detail: some View {
@@ -207,6 +398,15 @@ struct LibraryShell: View {
             }
         }
         .background(Theme.canvas(scheme))
+        .background {
+            GeometryReader { proxy in
+                Color.clear
+                    .onAppear { detailWidth = proxy.size.width }
+                    .onChange(of: proxy.size.width) { _, width in
+                        detailWidth = width
+                    }
+            }
+        }
         .accessibilityElement(children: .contain)
     }
 
@@ -237,6 +437,16 @@ struct LibraryShell: View {
             )
 
             HStack(spacing: 8) {
+                if columnVisibility == .detailOnly {
+                    Button(action: toggleSidebar) {
+                        Image(systemName: "sidebar.leading")
+                            .frame(width: 32, height: 32)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .help("Show sidebar")
+                    .accessibilityLabel("Show sidebar")
+                }
                 Text(model.placeTitle)
                     .font(.headline)
                     .foregroundStyle(Theme.ink(scheme))
@@ -250,6 +460,7 @@ struct LibraryShell: View {
                         : "\(model.items.count) showing")
                     .accessibilityAddTraits(.updatesFrequently)
                 Spacer()
+                sortMenu
                 Picker("Search scope", selection: $model.scope) {
                     Text(model.scopeCurrentLabel).tag(SearchScope.currentPlace)
                     Text("Entire library").tag(SearchScope.allItems)
@@ -369,6 +580,7 @@ struct LibraryShell: View {
                             onTrash: { model.trashItem(item.id, confirm: false) }
                         )
                             .id(item.id)
+                            .modifier(ItemDragModifier(id: item.id, type: Self.itemDragType))
                             .contentShape(Rectangle())
                             .onTapGesture { handleItemTap(item) }
                             .contextMenu { cardMenu(item) }
@@ -403,6 +615,7 @@ struct LibraryShell: View {
                             onTrash: { model.trashItem(item.id, confirm: false) }
                         )
                             .id(item.id)
+                            .modifier(ItemDragModifier(id: item.id, type: Self.itemDragType))
                             .contentShape(Rectangle())
                             .onTapGesture { handleItemTap(item) }
                             .contextMenu { cardMenu(item) }
@@ -438,7 +651,9 @@ struct LibraryShell: View {
         VStack(spacing: 0) {
             Table(of: SavedItem.self, selection: tableSelection, sortOrder: $tableSort) {
                 TableColumn("Title", value: \.title) { item in
-                    Text(item.title).lineLimit(1)
+                    Text(item.title)
+                        .lineLimit(1)
+                        .modifier(ItemDragModifier(id: item.id, type: Self.itemDragType))
                 }
                 .width(min: 160, ideal: 260)
                 TableColumn("Source", value: \.sourceLabel) { item in
@@ -496,14 +711,9 @@ struct LibraryShell: View {
     }
 
     private func applyTableSort(_ sort: [KeyPathComparator<SavedItem>]) {
-        guard let first = sort.first else { return }
-        let description = String(describing: first)
-        if description.contains("title") { model.setListOrder(.title) }
-        else if description.contains("sourceLabel") { model.setListOrder(.source) }
-        else if description.contains("kindLabel") { model.setListOrder(.kind) }
-        else if description.contains("tagsLabel") { model.setListOrder(.tags) }
-        else if description.contains("keptLabel") { model.setListOrder(.kept) }
-        else if description.contains("createdAt") { model.setListOrder(.recent) }
+        guard let first = sort.first, let column = TableColumnID(matching: first.keyPath) else { return }
+        guard model.listOrder != column.listOrder else { return }
+        model.setListOrder(column.listOrder)
     }
 
     @ViewBuilder
@@ -702,6 +912,161 @@ struct LibraryShell: View {
         model.createShelf(name: name)
         shelfName = ""
     }
+
+    private func toggleSidebar() {
+        columnVisibility = columnVisibility == .detailOnly ? .all : .detailOnly
+    }
+
+    private func beginRename(_ shelf: Shelf) {
+        renameDraft = shelf.name
+        renamingShelfID = shelf.id
+        renameFocused = true
+    }
+
+    private func cancelRename() {
+        renamingShelfID = nil
+        renameFocused = false
+    }
+
+    private func commitRename() {
+        guard let id = renamingShelfID else { return }
+        let name = renameDraft
+        cancelRename()
+        model.renameShelf(id: id, to: name)
+    }
+
+    private func shelfDropTargeted(_ shelfID: UUID) -> Binding<Bool> {
+        Binding(
+            get: { dropShelfID == shelfID },
+            set: { hovering in
+                if hovering {
+                    dropShelfID = shelfID
+                } else if dropShelfID == shelfID {
+                    dropShelfID = nil
+                }
+            }
+        )
+    }
+
+    private func acceptShelfDrop(_ providers: [NSItemProvider], shelfID: UUID) -> Bool {
+        let type = Self.itemDragType.identifier
+        let matched = providers.filter { $0.hasItemConformingToTypeIdentifier(type) }
+        guard !matched.isEmpty else { return false }
+        for provider in matched {
+            provider.loadDataRepresentation(forTypeIdentifier: type) { data, _ in
+                guard let data, let id = UUID(uuidString: String(decoding: data, as: UTF8.self)) else { return }
+                model.receiveShelfDrop(itemID: id, shelfID: shelfID)
+            }
+        }
+        return true
+    }
+
+    private func handleHorizontal(_ direction: Int) -> KeyPress.Result {
+        guard !keyboardBrowsingBlocked else { return .ignored }
+        if model.previewItemID != nil {
+            model.moveSelection(direction)
+            return .handled
+        }
+        guard model.viewMode != .table else { return .ignored }
+        let columns = model.viewMode == .covers ? coverColumnCount : cardColumnCount
+        model.moveSelection(direction * columns)
+        return .handled
+    }
+
+    private func handleEdge(toEnd: Bool) -> KeyPress.Result {
+        guard !keyboardBrowsingBlocked else { return .ignored }
+        model.moveSelection(toEnd: toEnd)
+        return .handled
+    }
+
+    private var cardColumnCount: Int {
+        Self.columnCount(width: detailWidth, minimum: model.cardSize.cardMinWidth, spacing: 16)
+    }
+
+    private var coverColumnCount: Int {
+        Self.columnCount(width: detailWidth, minimum: model.cardSize.coverSize, spacing: 12)
+    }
+
+    private static func columnCount(width: CGFloat, minimum: CGFloat, spacing: CGFloat) -> Int {
+        let available = width - 40
+        guard available > 0, minimum > 0 else { return 1 }
+        return max(1, Int((available + spacing) / (minimum + spacing)))
+    }
+
+    private var sortMenu: some View {
+        Menu {
+            ForEach(Self.headerSorts) { entry in
+                Button {
+                    chooseSort(entry.order)
+                } label: {
+                    if sortIsActive(entry.order) {
+                        Label(entry.title, systemImage: "checkmark")
+                    } else {
+                        Text(entry.title)
+                    }
+                }
+            }
+        } label: {
+            Label(activeSortTitle, systemImage: "arrow.up.arrow.down")
+        }
+        .accessibilityLabel("Sort, \(activeSortTitle)")
+        .help("Sort cards, covers, and the table")
+    }
+
+    private var activeSortTitle: String {
+        Self.headerSorts.first { sortIsActive($0.order) }?.title ?? "Sort"
+    }
+
+    private func sortIsActive(_ order: ResultOrder) -> Bool {
+        if order == .recent {
+            return model.listOrder == .recent || model.listOrder == .relevance
+        }
+        return model.listOrder == order
+    }
+
+    private func chooseSort(_ order: ResultOrder) {
+        model.setListOrder(order)
+        tableSort = [Self.tableComparator(for: order)]
+    }
+
+    private static func tableComparator(for order: ResultOrder) -> KeyPathComparator<SavedItem> {
+        switch order {
+        case .title: KeyPathComparator(\.title)
+        case .source: KeyPathComparator(\.sourceLabel)
+        case .kind: KeyPathComparator(\.kindLabel)
+        case .tags: KeyPathComparator(\.tagsLabel)
+        case .kept: KeyPathComparator(\.keptLabel)
+        case .recent, .relevance: KeyPathComparator(\.createdAt, order: .reverse)
+        }
+    }
+
+    private var allTagsSheet: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("All tags")
+                .font(.title2)
+                .foregroundStyle(Theme.ink(scheme))
+            List(model.tagCounts) { tag in
+                Button {
+                    model.addTagFilter(tag.label)
+                    showAllTags = false
+                } label: {
+                    HStack {
+                        Text(tag.label)
+                        Spacer()
+                        Text("\(tag.count)")
+                            .foregroundStyle(Theme.secondary(scheme))
+                    }
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("\(tag.label), \(tag.count) items")
+            }
+            Button("Close") { showAllTags = false }
+                .keyboardShortcut(.cancelAction)
+        }
+        .padding(20)
+        .frame(width: 360, height: 480)
+        .background(Theme.canvas(scheme))
+    }
 }
 
 private struct EmptyHero: View {
@@ -738,5 +1103,57 @@ private struct EmptyHero: View {
         }
         .frame(width: 240, height: 150, alignment: .leading)
         .accessibilityHidden(true)
+    }
+}
+
+private struct HeaderSort: Identifiable {
+    let order: ResultOrder
+    let title: String
+    var id: ResultOrder { order }
+}
+
+private enum TableColumnID: Hashable {
+    case title, source, kind, tags, kept, savedDate
+
+    var listOrder: ResultOrder {
+        switch self {
+        case .title: .title
+        case .source: .source
+        case .kind: .kind
+        case .tags: .tags
+        case .kept: .kept
+        case .savedDate: .recent
+        }
+    }
+
+    init?(matching keyPath: PartialKeyPath<SavedItem>) {
+        let byKeyPath: [PartialKeyPath<SavedItem>: TableColumnID] = [
+            \SavedItem.title: .title,
+            \SavedItem.sourceLabel: .source,
+            \SavedItem.kindLabel: .kind,
+            \SavedItem.tagsLabel: .tags,
+            \SavedItem.keptLabel: .kept,
+            \SavedItem.createdAt: .savedDate,
+        ]
+        guard let match = byKeyPath[keyPath] else { return nil }
+        self = match
+    }
+}
+
+private struct ItemDragModifier: ViewModifier {
+    let id: UUID
+    let type: UTType
+
+    func body(content: Content) -> some View {
+        content.onDrag {
+            let provider = NSItemProvider()
+            let payload = Data(id.uuidString.utf8)
+            let identifier = type.identifier
+            provider.registerDataRepresentation(forTypeIdentifier: identifier, visibility: .all) { completion in
+                completion(payload, nil)
+                return nil
+            }
+            return provider
+        }
     }
 }
