@@ -32,7 +32,7 @@ enum OpenedFileRouter {
         for name in filenames {
             if let url = URL(string: name), let scheme = url.scheme?.lowercased() {
                 switch scheme {
-                case "cardfile", "mymind":
+                case "stowmark", "cardfile", "mymind":
                     model.handleIncomingURL(url)
                     continue
                 case "http", "https":
@@ -54,11 +54,11 @@ enum OpenedFileRouter {
         }
     }
 
-    /// `handleIncomingURL` accepts `cardfile://` (and legacy `mymind://`). Wrap a web
-    /// address so Dock links use that path and never `Data(contentsOf:)` on a remote URL.
+    /// `handleIncomingURL` accepts `stowmark://` (and legacy `cardfile://` / `mymind://`).
+    /// Wrap a web address so Dock links use that path and never `Data(contentsOf:)` on a remote URL.
     private static func saveURL(for web: URL) -> URL? {
         var components = URLComponents()
-        components.scheme = "cardfile"
+        components.scheme = "stowmark"
         components.host = "save"
         components.queryItems = [URLQueryItem(name: "url", value: web.absoluteString)]
         return components.url
@@ -66,7 +66,7 @@ enum OpenedFileRouter {
 }
 
 @main
-struct CardfileApp: App {
+struct StowmarkApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @State private var model = AppModel.shared
 
@@ -78,7 +78,7 @@ struct CardfileApp: App {
         }
         .defaultSize(width: 1180, height: 760)
         .windowStyle(.hiddenTitleBar)
-        .handlesExternalEvents(matching: ["cardfile", "mymind"])
+        .handlesExternalEvents(matching: ["stowmark", "cardfile", "mymind"])
         .commands {
             CommandGroup(replacing: .newItem) {
                 Button("New Save") { model.focusCapture() }
@@ -93,7 +93,7 @@ struct CardfileApp: App {
                     .keyboardShortcut("f", modifiers: .command)
                 Button("Open Selected") { model.openSelected() }
                     .keyboardShortcut("o", modifiers: .command)
-                Button("Move Selected to Cardfile Trash") { model.trashSelected() }
+                Button("Move Selected to Stowmark Trash") { model.trashSelected() }
                     .keyboardShortcut(.delete, modifiers: .command)
                 Button("Undo Last Save") { model.undoLastCapture() }
                     .keyboardShortcut("z", modifiers: .command)

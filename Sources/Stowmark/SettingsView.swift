@@ -76,7 +76,7 @@ struct SettingsView: View {
                         get: { model.openPreviewOnSelect },
                         set: { model.setOpenPreviewOnSelect($0) }
                     ))
-                    Toggle("Confirm before moving to Cardfile Trash", isOn: Binding(
+                    Toggle("Confirm before moving to Stowmark Trash", isOn: Binding(
                         get: { model.confirmTrash },
                         set: { model.setConfirmTrash($0) }
                     ))
@@ -104,11 +104,11 @@ struct SettingsView: View {
                         .foregroundStyle(Theme.secondary(scheme))
                     Button("Open Safari Extensions…") {
                         model.openSafariExtensionSettings()
-                        status = "In Safari, turn on Cardfile. Saving a page writes the same local library, including when this window is closed."
+                        status = "In Safari, turn on Stowmark. Saving a page writes the same local library, including when this window is closed."
                     }
                     Text(model.usesSharedContainer
-                         ? "Safari and Cardfile are sharing one library on this Mac."
-                         : "Safari will open Cardfile to finish a save until the shared library folder is available.")
+                         ? "Safari and Stowmark are sharing one library on this Mac."
+                         : "Safari will open Stowmark to finish a save until the shared library folder is available.")
                         .font(.callout)
                 }
                 Section("Previews") {
@@ -163,10 +163,10 @@ struct SettingsView: View {
                     LabeledContent("Extension") {
                         Text(safariExtensionState)
                     }
-                    Button("Turn on Cardfile in Safari…") {
+                    Button("Turn on Stowmark in Safari…") {
                         model.openSafariExtensionSettings()
                     }
-                    .help("Opens Safari's extension settings with Cardfile selected")
+                    .help("Opens Safari's extension settings with Stowmark selected")
                     Toggle("Safari toolbar click saves immediately", isOn: $toolbarClickSaves)
                         .onChange(of: toolbarClickSaves) { _, enabled in
                             SafariSupport.setToolbarClickSavesImmediately(enabled)
@@ -206,7 +206,7 @@ struct SettingsView: View {
                             Button("Remove") { removeChromeHost() }
                         }
                     }
-                    Text("This installs the helper that lets the extension save without opening Cardfile. The extension itself is installed from the Chrome Web Store. The helper records where this copy of Cardfile lives, so run it again if you move the app.")
+                    Text("This installs the helper that lets the extension save without opening Stowmark. The extension itself is installed from the Chrome Web Store. The helper records where this copy of Stowmark lives, so run it again if you move the app.")
                         .font(.caption)
                         .foregroundStyle(Theme.secondary(scheme))
                     if let listing = ChromeSupport.storeListingURL {
@@ -223,7 +223,7 @@ struct SettingsView: View {
                         .foregroundStyle(Theme.secondary(scheme))
                 }
                 Section("Any other app") {
-                    Text("Share and the Services menu save from any Mac app, and cardfile://save works from a bookmarklet (mymind:// still accepted).")
+                    Text("Share and the Services menu save from any Mac app, and stowmark://save works from a bookmarklet (cardfile:// and mymind:// still accepted).")
                         .font(.callout)
                         .foregroundStyle(Theme.secondary(scheme))
                 }
@@ -270,8 +270,8 @@ struct SettingsView: View {
 
     private func exportLibrary() {
         let panel = NSSavePanel()
-        panel.allowedContentTypes = [.init(filenameExtension: "cardfile")!]
-        panel.nameFieldStringValue = "Cardfile-library.cardfile"
+        panel.allowedContentTypes = [.init(filenameExtension: "stowmark")!]
+        panel.nameFieldStringValue = "Stowmark-library.stowmark"
         guard panel.runModal() == .OK, let url = panel.url else { return }
         do {
             try model.exportArchive(to: url)
@@ -294,7 +294,12 @@ struct SettingsView: View {
 
     private func restoreLibrary(replace: Bool) {
         let panel = NSOpenPanel()
-        panel.allowedContentTypes = [.init(filenameExtension: "cardfile")!, .init(filenameExtension: "mymind")!, .zip]
+        panel.allowedContentTypes = [
+            .init(filenameExtension: "stowmark")!,
+            .init(filenameExtension: "cardfile")!,
+            .init(filenameExtension: "mymind")!,
+            .zip,
+        ]
         panel.allowsMultipleSelection = false
         guard panel.runModal() == .OK, let url = panel.url else { return }
         do {

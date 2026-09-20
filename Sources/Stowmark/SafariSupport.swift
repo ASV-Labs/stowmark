@@ -3,7 +3,7 @@ import LibraryCore
 import SafariServices
 
 enum SafariSupport {
-    static let extensionIdentifier = "com.charlesbonetti.cardfile.extension"
+    static let extensionIdentifier = "com.charlesbonetti.stowmark.extension"
     /// Same file the extension reads from the App Group handoff folder.
     static let toolbarSettingsFile = "capture-settings.json"
 

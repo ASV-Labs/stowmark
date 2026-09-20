@@ -3,12 +3,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>My Mind — local visual library for Mac</title>
-  <meta name="description" content="My Mind keeps links, images, excerpts, and PDFs in a local library on your Mac. Public alpha 1.0.0-alpha.10. No account. No cloud library.">
+  <title>Stowmark — local visual library for Mac</title>
+  <meta name="description" content="Stowmark keeps links, images, excerpts, and PDFs in a local library on your Mac. Public alpha. No account. No cloud library. Formerly My Mind.">
   <meta name="theme-color" content="#F3EDE4">
   <link rel="icon" href="assets/app-icon.png" type="image/png">
-  <meta property="og:title" content="My Mind — local visual library for Mac">
-  <meta property="og:description" content="Save a link, find it later, keep the file on this Mac. Public alpha 1.0.0-alpha.10.">
+  <meta property="og:title" content="Stowmark — local visual library for Mac">
+  <meta property="og:description" content="Save a link, find it later, keep the file on this Mac. Public alpha.">
   <meta property="og:image" content="assets/app-icon.png">
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -17,19 +17,21 @@
 
   <header class="mast">
     <div class="wrap mast-inner">
-      <a class="wordmark" href="#top">My Mind</a>
+      <a class="wordmark" href="#top">Stowmark</a>
       <nav aria-label="Page">
         <a href="#walkthrough">Walkthrough</a>
         <a href="#install">Install</a>
         <a href="#limits">Limits</a>
       </nav>
-      <a class="btn btn-small" href="https://github.com/P0GL0L/my-mind/releases/download/v1.0.0-alpha.10/MyMind-1.0.0-alpha.10.dmg">Download DMG</a>
+      <a class="btn btn-small" href="https://github.com/P0GL0L/my-mind/releases/latest">Download DMG</a>
     </div>
   </header>
 
   <main id="main">
     <p class="stamp wrap" id="top">
-      <span>Public alpha 1.0.0-alpha.10</span>
+      <span>Public alpha</span>
+      <span aria-hidden="true">·</span>
+      <span>Formerly My Mind</span>
       <span aria-hidden="true">·</span>
       <span>Not notarized</span>
       <span aria-hidden="true">·</span>
@@ -40,20 +42,17 @@
       <div class="hero-copy">
         <p class="kicker">Mac · local-first</p>
         <h1 id="hero-title">Keep what you save. <span>It stays on this Mac.</span></h1>
-        <p class="lede">My Mind is a visual library for links, images, excerpts, and PDFs. Paste a link or drop a file. Search later. No account, no cloud library.</p>
+        <p class="lede">Stowmark is a visual library for links, images, excerpts, and PDFs. Paste a link or drop a file. Search later. No account, no cloud library.</p>
         <p class="hero-actions">
-          <a class="btn" href="https://github.com/P0GL0L/my-mind/releases/download/v1.0.0-alpha.10/MyMind-1.0.0-alpha.10.dmg">Download the alpha DMG</a>
-          <a class="text-link" href="https://github.com/P0GL0L/my-mind/releases/tag/v1.0.0-alpha.10">Release notes</a>
+          <a class="btn" href="https://github.com/P0GL0L/my-mind/releases/latest">Download the alpha DMG</a>
+          <a class="text-link" href="https://github.com/P0GL0L/my-mind/releases/latest">Release notes</a>
         </p>
-        <p class="hash">
-          SHA-256
-          <code>d4ae1d1b92e57586bb6b07e5f78057c2ac3faca3c02587d0dfcb620f36c8f44f</code>
-        </p>
+        <p class="hash">Checksums are on the GitHub release next to the disk image.</p>
       </div>
 
       <figure class="plate" id="film" aria-labelledby="film-title">
         <div class="plate-stage" data-film-stage>
-          <img src="assets/app-icon.png" width="512" height="512" alt="My Mind icon: a coffee print, a quotation card, and a green book on lined paper." data-wdi-media-role="identity">
+          <img src="assets/app-icon.png" width="512" height="512" alt="Stowmark icon: a coffee print, a quotation card, and a green book on lined paper." data-wdi-media-role="identity">
         </div>
         <figcaption>
           <p class="plate-label" id="film-title">Plate · Walkthrough film</p>
@@ -72,7 +71,7 @@
           <span class="idx" aria-hidden="true">01</span>
           <div>
             <h3>Save from the place you already are</h3>
-            <p>Paste a link or drop a file into the capture bar. The same store also accepts Safari, Share, Services, Dock drop, Shortcuts, and Chrome (developer-mode load until the Web Store listing exists).</p>
+            <p>Paste a link or drop a file into the capture bar. The same store also accepts Safari, Share, Services, Dock drop, Shortcuts, Chrome, and the menu bar icon.</p>
             <p class="artifact"><span>Artifact</span> Capture bar copy in the shipping app: “Paste a link or drop a file.”</p>
           </div>
         </li>
@@ -96,8 +95,8 @@
           <span class="idx" aria-hidden="true">04</span>
           <div>
             <h3>Leave with a copy you can restore</h3>
-            <p>Export and restore use a <code>.mymind</code> archive from Settings. The alpha is an evaluation build: keep your own export if the library matters.</p>
-            <p class="artifact"><span>Artifact</span> Installer <code>MyMind-1.0.0-alpha.10.dmg</code> · SHA-256 above.</p>
+            <p>Export and restore use a <code>.stowmark</code> archive from Settings. The alpha is an evaluation build: keep your own export if the library matters.</p>
+            <p class="artifact"><span>Artifact</span> GitHub release assets include the DMG and a SHA-256 sidecar.</p>
           </div>
         </li>
       </ol>
@@ -111,7 +110,7 @@
         </header>
         <ol class="steps">
           <li>
-            <h3>Drag My Mind into Applications</h3>
+            <h3>Drag Stowmark into Applications</h3>
             <p>Mount the DMG and copy the app. Do not run it from the disk image.</p>
           </li>
           <li>
@@ -132,6 +131,10 @@
         <h2 id="limits-title">What this alpha will not pretend to be.</h2>
       </header>
       <dl class="facts">
+        <div>
+          <dt>Name</dt>
+          <dd>Developed as My Mind. Renamed to Stowmark to stay clear of mymind.com. Same local library.</dd>
+        </div>
         <div>
           <dt>Notarization</dt>
           <dd>Right-click → Open is required until a notarized build ships.</dd>
@@ -154,8 +157,8 @@
 
   <footer class="foot">
     <div class="wrap foot-inner">
-      <p>My Mind · Charles Bonetti · 2026</p>
-      <p><a href="https://github.com/P0GL0L/my-mind">Source</a> · <a href="https://github.com/P0GL0L/my-mind/releases/tag/v1.0.0-alpha.10">v1.0.0-alpha.10</a></p>
+      <p>Stowmark · Charles Bonetti · 2026</p>
+      <p><a href="https://github.com/P0GL0L/my-mind">Source</a> · <a href="https://github.com/P0GL0L/my-mind/releases/latest">Releases</a></p>
     </div>
   </footer>
 

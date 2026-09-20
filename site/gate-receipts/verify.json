@@ -1,0 +1,9 @@
+{
+  "build_dir": "/Users/charlesbonetti/my-mind/site",
+  "pages": [
+    "index.html"
+  ],
+  "mode": "static-heuristics (no rendering; necessary, never sufficient)",
+  "findings": [],
+  "exit": 0
+}

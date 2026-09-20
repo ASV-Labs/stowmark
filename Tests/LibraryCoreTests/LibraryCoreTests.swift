@@ -17,6 +17,59 @@ final class LibraryCoreTests: XCTestCase {
         try LibraryStore(root: root)
     }
 
+    func testLegacyApplicationSupportMigrationCopiesWithoutDeletingSource() throws {
+        let support = root.appendingPathComponent("Application Support", isDirectory: true)
+        let cardfile = support.appendingPathComponent("Cardfile", isDirectory: true)
+        let stowmark = support.appendingPathComponent("Stowmark", isDirectory: true)
+        try FileManager.default.createDirectory(at: cardfile, withIntermediateDirectories: true)
+
+        let legacy = try LibraryStore(root: cardfile)
+        let saved = try legacy.capture(CaptureRequest(
+            captureKind: .page,
+            pageURL: "https://example.com/kept",
+            capturedTitle: "Worth keeping",
+            tags: ["Studio"],
+            origin: "test"
+        ))
+        XCTAssertEqual(saved.status, .saved)
+        XCTAssertTrue(LibraryReplica.hasDatabase(at: cardfile))
+
+        try FileManager.default.createDirectory(at: stowmark, withIntermediateDirectories: true)
+        try LibraryReplica.replicate(from: cardfile, to: stowmark)
+
+        XCTAssertTrue(LibraryReplica.hasDatabase(at: cardfile), "legacy library must remain")
+        XCTAssertTrue(LibraryReplica.hasDatabase(at: stowmark))
+        let migrated = try LibraryStore(root: stowmark)
+        let items = try migrated.items(matching: LibraryQuery())
+        XCTAssertEqual(items.count, 1)
+        XCTAssertEqual(items.first?.title, "Worth keeping")
+        XCTAssertEqual(items.first?.confirmedTags.map(\.label), ["Studio"])
+    }
+
+    func testLegacyArchiveExtensionsRestore() throws {
+        let store = try makeStore()
+        _ = try store.capture(CaptureRequest(
+            captureKind: .page,
+            pageURL: "https://example.com/archive-roundtrip",
+            capturedTitle: "Archive roundtrip",
+            origin: "test"
+        ))
+        let modern = root.appendingPathComponent("library.stowmark")
+        _ = try store.exportArchive(to: modern)
+
+        for ext in ["cardfile", "mymind"] {
+            let renamed = root.appendingPathComponent("library.\(ext)")
+            try? FileManager.default.removeItem(at: renamed)
+            try FileManager.default.copyItem(at: modern, to: renamed)
+            let restoredRoot = root.appendingPathComponent("restored-\(ext)", isDirectory: true)
+            try FileManager.default.createDirectory(at: restoredRoot, withIntermediateDirectories: true)
+            let restored = try LibraryStore(root: restoredRoot)
+            let summary = try restored.restoreArchive(from: renamed, mode: .requireEmpty)
+            XCTAssertEqual(summary.itemCount, 1, ".\(ext) should restore")
+            XCTAssertEqual(try restored.items(matching: LibraryQuery()).first?.title, "Archive roundtrip")
+        }
+    }
+
     func testArticleJourneySurvivesRestartSearchAndRestore() throws {
         let requestID = UUID()
         let first = try makeStore()
@@ -56,7 +109,7 @@ final class LibraryCoreTests: XCTestCase {
         XCTAssertEqual(parsed.fragment, "top")
         XCTAssertTrue(parsed.query?.contains("id=1") == true)
 
-        let archive = root.appendingPathComponent("library.cardfile")
+        let archive = root.appendingPathComponent("library.stowmark")
         let summary = try again.exportArchive(to: archive)
         XCTAssertEqual(summary.itemCount, 1)
         let restoredRoot = root.appendingPathComponent("restored", isDirectory: true)
@@ -208,7 +261,7 @@ final class LibraryCoreTests: XCTestCase {
     func testRestoreRefusesNonEmptyLibrary() throws {
         let store = try makeStore()
         _ = try store.capture(CaptureRequest(captureKind: .link, targetURL: "https://example.com/a", capturedTitle: "Alpha", origin: "test"))
-        let archive = root.appendingPathComponent("one.cardfile")
+        let archive = root.appendingPathComponent("one.stowmark")
         _ = try store.exportArchive(to: archive)
         _ = try store.capture(CaptureRequest(captureKind: .link, targetURL: "https://example.com/b", capturedTitle: "Beta", origin: "test"))
         XCTAssertThrowsError(try store.restoreArchive(from: archive, mode: .requireEmpty)) { error in

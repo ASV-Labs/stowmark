@@ -2,9 +2,9 @@ import AppIntents
 import Foundation
 import LibraryCore
 
-struct SaveToCardfileIntent: AppIntent {
-    static let title: LocalizedStringResource = "Save to Cardfile"
-    static let description = IntentDescription("Save a web link into Cardfile on this Mac.")
+struct SaveToStowmarkIntent: AppIntent {
+    static let title: LocalizedStringResource = "Save to Stowmark"
+    static let description = IntentDescription("Save a web link into Stowmark on this Mac.")
     static let openAppWhenRun = true
 
     @Parameter(title: "URL")
@@ -20,7 +20,7 @@ struct SaveToCardfileIntent: AppIntent {
     var note: String?
 
     static var parameterSummary: some ParameterSummary {
-        Summary("Save \(\.$url) to Cardfile") {
+        Summary("Save \(\.$url) to Stowmark") {
             \.$shelf
             \.$tags
             \.$note
@@ -52,7 +52,7 @@ struct SaveToCardfileIntent: AppIntent {
         }
         guard result.status == .saved || result.status == .alreadySaved else {
             throw NSError(
-                domain: "com.charlesbonetti.cardfile",
+                domain: "com.charlesbonetti.stowmark",
                 code: 1,
                 userInfo: [NSLocalizedDescriptionKey: result.message]
             )
@@ -61,14 +61,14 @@ struct SaveToCardfileIntent: AppIntent {
     }
 }
 
-struct CardfileShortcuts: AppShortcutsProvider {
+struct StowmarkShortcuts: AppShortcutsProvider {
     static var appShortcuts: [AppShortcut] {
         AppShortcut(
-            intent: SaveToCardfileIntent(),
+            intent: SaveToStowmarkIntent(),
             phrases: [
                 "Save to \(.applicationName)",
             ],
-            shortTitle: "Save to Cardfile",
+            shortTitle: "Save to Stowmark",
             systemImageName: "bookmark"
         )
     }

@@ -499,7 +499,7 @@ final class LibraryModel {
 
     func openSettings() {
         NSApp.activate(ignoringOtherApps: true)
-        NotificationCenter.default.post(name: .openCardfileSettings, object: nil)
+        NotificationCenter.default.post(name: .openStowmarkSettings, object: nil)
         // Bring an already-open Settings window forward if SwiftUI left it behind the library.
         DispatchQueue.main.async {
             Self.bringSettingsWindowForward()
@@ -525,7 +525,7 @@ final class LibraryModel {
     }
 
     func handleIncomingURL(_ url: URL) {
-        guard ["cardfile", "mymind"].contains(url.scheme?.lowercased() ?? "") else { return }
+        guard ["stowmark", "cardfile", "mymind"].contains(url.scheme?.lowercased() ?? "") else { return }
         let host = url.host?.lowercased() ?? url.path.trimmingCharacters(in: CharacterSet(charactersIn: "/")).lowercased()
         if host == "open" || host.isEmpty {
             return
@@ -629,7 +629,7 @@ final class LibraryModel {
             captureImageData(png, filename: "Dropped.png", origin: "drop")
             return
         }
-        showFailure("Not saved. Cardfile can copy JPEG, PNG, HEIC, and PDF files.")
+        showFailure("Not saved. Stowmark can copy JPEG, PNG, HEIC, and PDF files.")
     }
 
     private func droppedURL(_ provider: NSItemProvider, type: UTType) async -> URL? {
@@ -770,10 +770,10 @@ final class LibraryModel {
         guard let store else { return }
         if confirm ?? confirmTrash {
             let alert = NSAlert()
-            alert.messageText = "Move to Cardfile Trash?"
-            alert.informativeText = "This stays in Cardfile. It does not go to the Mac Trash. You can restore it from the Trash shelf for \(Limits.trashDays) days."
+            alert.messageText = "Move to Stowmark Trash?"
+            alert.informativeText = "This stays in Stowmark. It does not go to the Mac Trash. You can restore it from the Trash shelf for \(Limits.trashDays) days."
             alert.alertStyle = .informational
-            alert.addButton(withTitle: "Move to Cardfile Trash")
+            alert.addButton(withTitle: "Move to Stowmark Trash")
             alert.addButton(withTitle: "Cancel")
             guard alert.runModal() == .alertFirstButtonReturn else { return }
         }
@@ -787,7 +787,7 @@ final class LibraryModel {
         if selectedItemID == id { selectedItemID = nil }
         if previewItemID == id { previewItemID = nil }
         captureFailed = false
-        captureMessage = "Moved to Cardfile Trash."
+        captureMessage = "Moved to Stowmark Trash."
         reload()
     }
 
@@ -949,7 +949,7 @@ final class LibraryModel {
             lastTrashedItemID = nil
             selectedItemID = id
             captureFailed = false
-            captureMessage = "Restored from Cardfile Trash."
+            captureMessage = "Restored from Stowmark Trash."
             reload()
         } catch {
             showFailure(error.localizedDescription)
@@ -1042,10 +1042,10 @@ final class LibraryModel {
     }
 
     static let safariPageBookmarklet =
-        "javascript:void(location.href='cardfile://save?url='+encodeURIComponent(location.href)+'&title='+encodeURIComponent(document.title))"
+        "javascript:void(location.href='stowmark://save?url='+encodeURIComponent(location.href)+'&title='+encodeURIComponent(document.title))"
 
     static let safariExcerptBookmarklet =
-        "javascript:void(location.href='cardfile://save?url='+encodeURIComponent(location.href)+'&title='+encodeURIComponent(document.title)+'&text='+encodeURIComponent(window.getSelection().toString()))"
+        "javascript:void(location.href='stowmark://save?url='+encodeURIComponent(location.href)+'&title='+encodeURIComponent(document.title)+'&text='+encodeURIComponent(window.getSelection().toString()))"
 
     private func runCapture(_ request: CaptureRequest, store: LibraryStore, clearDraftOnSuccess: String? = nil) {
         isSaving = true

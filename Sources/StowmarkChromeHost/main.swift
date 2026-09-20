@@ -2,7 +2,7 @@ import AppKit
 import Foundation
 import LibraryCore
 
-/// Chrome native messaging host for Cardfile.
+/// Chrome native messaging host for Stowmark.
 ///
 /// Chrome frames every message as a 4-byte native-endian length followed by UTF-8 JSON, on stdin
 /// and stdout. Nothing else may reach stdout, or Chrome drops the connection. The messages

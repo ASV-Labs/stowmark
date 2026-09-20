@@ -1,14 +1,14 @@
-# Cardfile landing — WDI-010 design note
+# Stowmark landing — WDI-010 design note
 
 Page file: `index.html`
 
 ## Classification
 
 ```text
-Project/topic: Cardfile public-alpha landing
+Project/topic: Stowmark public-alpha landing
 Page or site type: software-product
 Primary audience: Mac evaluators who already have or will receive the private GitHub release
-Primary user action: download Cardfile-1.0.0-alpha.10.dmg and open it with Gatekeeper
+Primary user action: download Stowmark-1.0.0-alpha.10.dmg and open it with Gatekeeper
 Secondary user action: understand the save → keep → find → export loop, then drop in a walkthrough film later
 Emotional tone: precise, trustworthy, warm
 Content density: editorial; operational facts over adjectives
@@ -22,7 +22,7 @@ Implementation stack: static HTML + CSS + one progressive-enhancement script; no
 
 ## Experience thesis
 
-A visitor should **understand** that Cardfile is a local visual library on their Mac, **feel** the paper desk of the app rather than a SaaS dashboard, **believe** the limits because they are designed in, and **do** download alpha.10.
+A visitor should **understand** that Stowmark is a local visual library on their Mac, **feel** the paper desk of the app rather than a SaaS dashboard, **believe** the limits because they are designed in, and **do** download alpha.10.
 
 ## Creative concept
 
@@ -31,7 +31,7 @@ A visitor should **understand** that Cardfile is a local visual library on their
 ## Subject-specific cues
 
 1. Capture bar language from the shipping app: “Paste a link or drop a file.”
-2. Paper / ink / forest green tokens from `Sources/Cardfile/Theme.swift` (`#F3EDE4`, `#1F1A16`, `#1B5E3B`).
+2. Paper / ink / forest green tokens from `Sources/Stowmark/Theme.swift` (`#F3EDE4`, `#1F1A16`, `#1B5E3B`). The shipping name is Stowmark; My Mind remains only as a former-name honesty line.
 3. Kind inventory the library actually stores: links, images, excerpts, PDFs — plus the real layout names Cards, Rows & Columns, Covers.
 
 ## Selected composition
@@ -70,7 +70,7 @@ Why it fits: evaluators need the sequence they will perform after the DMG, not a
 ## Borrowed reference principles (max 3)
 
 1. **Output.com** — cream paper as the page material, then a large type band. Solves “SaaS white void.” Fails if we overlay lime marketing on photography we do not own.
-2. **Alma.food** — one download object on warm paper, quiet nav. Solves “too many CTAs.” Fails if we fake a phone mockup; Cardfile is a Mac app.
+2. **Alma.food** — one download object on warm paper, quiet nav. Solves “too many CTAs.” Fails if we fake a phone mockup; Stowmark is a Mac app.
 3. **Lookback.com** — type-led feature stack, no card wall. Solves equal-weight feature tiles. Fails if we add pastel blobs or a hand-swoosh gimmick.
 
 ## Card budget

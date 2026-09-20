@@ -1,6 +1,6 @@
-# Cardfile — ADI-010 design note
+# Stowmark — ADI-010 design note
 
-Working product name chosen by Charles: Cardfile. The blueprint’s “Visual Library” label is not used in the interface. mymind.com already exists; this note does not claim a trademark clearance.
+Working product name chosen by Charles: Stowmark (pronounced STOH-mark). Kept / Folio / Cardfile were rejected for category collisions or fit. Preliminary App Store screening found no exact Stowmark hit; this is not trademark clearance. The blueprint’s “Visual Library” label is not used in the interface.
 
 Platform target(s): macOS desktop (SwiftUI checker token ios — the shipping target is the Mac, not a phone)
 App category & jobs-to-be-done: utility — save a link, image, excerpt, or PDF and find that same thing later without building a filing system first

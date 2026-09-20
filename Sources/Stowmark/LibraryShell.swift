@@ -27,7 +27,7 @@ struct LibraryShell: View {
     @FocusState private var shelfNameFocused: Bool
 
     private static let sidebarCollapsedKey = "librarySidebarCollapsed"
-    private static let itemDragType = UTType(exportedAs: "com.charlesbonetti.cardfile.saved-item")
+    private static let itemDragType = UTType(exportedAs: "com.charlesbonetti.stowmark.saved-item")
     private static let headerSorts: [HeaderSort] = [
         HeaderSort(order: .recent, title: "Recent"),
         HeaderSort(order: .title, title: "Title"),
@@ -79,7 +79,7 @@ struct LibraryShell: View {
                 model.addTagFilter(label)
             }
         }
-        .onReceive(NotificationCenter.default.publisher(for: .openCardfileSettings)) { _ in
+        .onReceive(NotificationCenter.default.publisher(for: .openStowmarkSettings)) { _ in
             NSApp.activate(ignoringOtherApps: true)
             openSettings()
         }
@@ -183,7 +183,7 @@ struct LibraryShell: View {
 
     private var sidebar: some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text("Cardfile")
+            Text("Stowmark")
                 .font(.title2)
                 .foregroundStyle(Theme.ink(scheme))
                 .padding(.horizontal, 20)
@@ -421,11 +421,11 @@ struct LibraryShell: View {
             HStack(spacing: 10) {
                 Image(systemName: "magnifyingglass")
                     .foregroundStyle(Theme.secondary(scheme))
-                TextField("Search title, notes, tags, excerpts", text: $model.queryText)
+                TextField("Search your library", text: $model.queryText)
                     .textFieldStyle(.plain)
                     .font(.title3)
                     .focused($searchFocused)
-                    .accessibilityLabel("Search library")
+                    .accessibilityLabel("Search your library")
                     .accessibilityIdentifier("library.search")
                 if !model.queryText.isEmpty {
                     Button("Clear query") { model.clearQuery() }
@@ -742,10 +742,10 @@ struct LibraryShell: View {
         VStack(alignment: .leading, spacing: 16) {
             Spacer()
             EmptyHero()
-            Text("Save something you want to find.")
+            Text("Start with something worth keeping.")
                 .font(.largeTitle)
                 .foregroundStyle(Theme.ink(scheme))
-            Text("Paste a link, drop an image or PDF, save from the clipboard, or set up Safari. Organization can wait. Nothing here is sample data.")
+            Text("Drop a link, image, PDF, or text here. Paste into the capture bar, save from the clipboard or menu bar, or set up Safari. Each card will say what was actually kept. Nothing here is sample data.")
                 .font(.body)
                 .foregroundStyle(Theme.secondary(scheme))
                 .frame(maxWidth: 460, alignment: .leading)
@@ -840,7 +840,7 @@ struct LibraryShell: View {
             Text(model.startupError ?? "Unknown problem")
                 .font(.body)
                 .textSelection(.enabled)
-            Text("You can start a new empty library on this Mac. If you already exported a .cardfile or .mymind archive, restore it afterwards from Settings.")
+            Text("You can start a new empty library on this Mac. If you already exported a .stowmark, .cardfile, or .mymind archive, restore it afterwards from Settings.")
                 .font(.body)
                 .foregroundStyle(Theme.secondary(scheme))
             HStack(spacing: 12) {
@@ -912,7 +912,7 @@ struct LibraryShell: View {
             } else {
                 Button(item.favorite ? "Unfavorite" : "Favorite") { model.toggleFavorite(item.id) }
                 Button("Filter by \(item.sourceLabel)") { model.filterDomain(item.sourceDomain ?? item.sourceLabel) }
-                Button("Move to Cardfile Trash") { model.select(item.id); model.trashSelected() }
+                Button("Move to Stowmark Trash") { model.select(item.id); model.trashSelected() }
             }
         }
     }

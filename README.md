@@ -1,37 +1,35 @@
-# Cardfile
+# Stowmark
 
-Local-first Mac visual library for links, images, excerpts, and PDFs.
+**Your visual library. On your Mac.**
 
-Formerly developed as “My Mind.” Rebranded to avoid collision with [mymind.com](https://mymind.com). Same product: your library stays on your Mac, with honest retention labels for what was actually kept.
+Collect links, images, PDFs, and excerpts in one place. Browse visually, organize with shelves and tags, and find the useful things again. No account required.
 
-Public alpha **1.0.0-alpha.11**. Proprietary evaluation license — see [`LICENSE`](LICENSE). Not App Store, not notarized: first launch is right-click → Open.
+A home for what you find.
+
+Public alpha **1.0.0-alpha.12**. Proprietary evaluation license — see [`LICENSE`](LICENSE). Not App Store, not notarized: first launch is right-click → Open.
+
+The library is local. Each item shows what was actually saved — a bookmark, a copied file, or an excerpt — so links are not advertised as full offline page archives.
 
 ## Install
 
-Download the DMG from the [latest GitHub release](https://github.com/P0GL0L/my-mind/releases/latest), drag **Cardfile** into Applications, then right-click → Open.
+Download the DMG from the [latest GitHub release](https://github.com/P0GL0L/my-mind/releases/latest), drag **Stowmark** into Applications, then right-click → Open.
 
 - Paste a link into the capture bar, or use Safari / Share / Services / Dock / Shortcuts / Chrome / the menu bar icon
-- Search with Command-F
+- Search with Command-F (“Search your library”)
 - Layout switcher: Cards, Rows & Columns, Covers
 - Gear → Settings (Appearance, Capture, library export/restore)
+
+Export writes a **Stowmark Library** (`.stowmark`). Older `.cardfile` and `.mymind` archives still restore.
 
 ## Build from source
 
 ```bash
 swift test --filter 'LibraryCoreTests|PressureTests'
 ./scripts/make-alpha-dmg.sh
-open dist/Cardfile-$(cat VERSION).dmg
+open dist/Stowmark-$(cat VERSION).dmg
 ```
 
 Version is the single line in `VERSION`. Packaging stamps every nested bundle before signing.
-
-Alpha notes land in `dist/ALPHA-NOTES.md` after a DMG build.
-
-Chrome extension (developer-mode load):
-
-```bash
-./scripts/make-chrome-extension.sh
-```
 
 ## Privacy
 

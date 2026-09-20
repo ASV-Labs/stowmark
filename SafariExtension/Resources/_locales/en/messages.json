@@ -1,10 +1,10 @@
 {
   "extension_name": {
-    "message": "Cardfile",
+    "message": "Stowmark",
     "description": "The display name for the extension."
   },
   "extension_description": {
-    "message": "Save pages and selections into Cardfile on this Mac.",
+    "message": "Save pages and selections into Stowmark on this Mac.",
     "description": "Description of the extension."
   }
 }

@@ -5,19 +5,19 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleExecutable</key>
-	<string>CardfileChromeHost</string>
+	<string>StowmarkChromeHost</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.charlesbonetti.cardfile.chromehost</string>
+	<string>com.charlesbonetti.stowmark.chromehost</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>Cardfile Chrome Host</string>
+	<string>Stowmark Chrome Host</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.0.0-alpha.11</string>
+	<string>1.0.0-alpha.12</string>
 	<key>CFBundleVersion</key>
-	<string>11</string>
+	<string>12</string>
 	<key>LSBackgroundOnly</key>
 	<true/>
 	<key>LSMinimumSystemVersion</key>

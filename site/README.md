@@ -1,6 +1,12 @@
-# My Mind landing
+# Stowmark landing
 
-Static page for the public alpha. Open `index.html` or serve this folder.
+Static page for the public alpha. Preview:
+
+```bash
+open site/index.html
+```
+
+or serve this folder.
 
 ## Walkthrough film
 

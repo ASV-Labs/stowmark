@@ -369,7 +369,7 @@ public enum LibraryError: Error, LocalizedError, CustomStringConvertible, Equata
         case .notFound: "That item is no longer in the library."
         case .archive(let detail): detail
         case .libraryNotEmpty: "This library already has items. Restore only replaces it when you confirm that choice."
-        case .unsupportedSchema: "This archive was written by a newer version of Cardfile."
+        case .unsupportedSchema: "This archive was written by a newer version of Stowmark."
         case .migration(let detail): detail
         }
     }
@@ -386,25 +386,33 @@ public enum Limits {
 }
 
 public enum StorageLocator {
-    public static let appGroupID = "group.com.charlesbonetti.cardfile"
-    /// Legacy group from the My Mind alpha — kept entitled so first launch can migrate.
-    public static let legacyAppGroupID = "group.com.charlesbonetti.mymind"
+    public static let appGroupID = "group.com.charlesbonetti.stowmark"
+    /// Brief Cardfile alpha — kept entitled so first launch can migrate.
+    public static let cardfileAppGroupID = "group.com.charlesbonetti.cardfile"
+    /// Original My Mind alpha — kept entitled so first launch can migrate.
+    public static let mymindAppGroupID = "group.com.charlesbonetti.mymind"
 
     /// Sandboxed Application Support — primary library home for the Mac app.
+    /// Migrates without deleting the source until the copy is verified present.
     public static func appSupportRoot() throws -> URL {
         let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-        let root = support.appendingPathComponent("Cardfile", isDirectory: true)
-        let legacy = support.appendingPathComponent("MyMind", isDirectory: true)
+        let root = support.appendingPathComponent("Stowmark", isDirectory: true)
         let fm = FileManager.default
-        if !LibraryReplica.hasDatabase(at: root), LibraryReplica.hasDatabase(at: legacy) {
-            try? fm.createDirectory(at: root.deletingLastPathComponent(), withIntermediateDirectories: true)
-            if fm.fileExists(atPath: root.path) {
-                try? fm.removeItem(at: root)
-            }
-            try? fm.moveItem(at: legacy, to: root)
-        }
         try fm.createDirectory(at: root, withIntermediateDirectories: true)
-        migrateLegacySharedContainerIfNeeded(into: root)
+
+        if !LibraryReplica.hasDatabase(at: root) {
+            // Prefer the most recent product folder that still has a library.
+            let legacyFolders = [
+                support.appendingPathComponent("Cardfile", isDirectory: true),
+                support.appendingPathComponent("MyMind", isDirectory: true),
+            ]
+            for legacy in legacyFolders where LibraryReplica.hasDatabase(at: legacy) {
+                try? LibraryReplica.replicate(from: legacy, to: root)
+                if LibraryReplica.hasDatabase(at: root) { break }
+            }
+        }
+
+        migrateLegacySharedContainersIfNeeded(into: root)
         return root
     }
 
@@ -414,18 +422,28 @@ public enum StorageLocator {
         FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupID)
     }
 
-    public static func legacySharedRoot() -> URL? {
-        FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: legacyAppGroupID)
+    public static func legacySharedRoots() -> [URL] {
+        [cardfileAppGroupID, mymindAppGroupID].compactMap {
+            FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: $0)
+        }
     }
 
-    /// One-shot: if Cardfile's group is empty but the old My Mind group has a library, copy it.
-    private static func migrateLegacySharedContainerIfNeeded(into appSupport: URL) {
-        guard let legacy = legacySharedRoot(), LibraryReplica.hasDatabase(at: legacy) else { return }
+    /// One-shot: if Stowmark's group / support is empty, copy from Cardfile or My Mind groups.
+    /// Never deletes the legacy containers.
+    private static func migrateLegacySharedContainersIfNeeded(into appSupport: URL) {
+        let sources = legacySharedRoots().filter { LibraryReplica.hasDatabase(at: $0) }
+        guard !sources.isEmpty else { return }
         if let shared = sharedRoot(), !LibraryReplica.hasDatabase(at: shared) {
-            try? LibraryReplica.replicate(from: legacy, to: shared)
+            for source in sources {
+                try? LibraryReplica.replicate(from: source, to: shared)
+                if LibraryReplica.hasDatabase(at: shared) { break }
+            }
         }
-        if !LibraryReplica.hasDatabase(at: appSupport), LibraryReplica.hasDatabase(at: legacy) {
-            try? LibraryReplica.replicate(from: legacy, to: appSupport)
+        if !LibraryReplica.hasDatabase(at: appSupport) {
+            for source in sources {
+                try? LibraryReplica.replicate(from: source, to: appSupport)
+                if LibraryReplica.hasDatabase(at: appSupport) { break }
+            }
         }
     }
 
@@ -434,7 +452,7 @@ public enum StorageLocator {
     }
 
     public static func isWritableDirectory(_ url: URL) -> Bool {
-        let probe = url.appendingPathComponent(".cardfile-write-probe-\(UUID().uuidString)")
+        let probe = url.appendingPathComponent(".stowmark-write-probe-\(UUID().uuidString)")
         do {
             try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
             try Data("ok".utf8).write(to: probe, options: .atomic)
@@ -451,7 +469,7 @@ public enum StorageLocator {
     }
 
     public static func divergedMarker(in root: URL) -> URL {
-        root.appendingPathComponent(".cardfile-diverged")
+        root.appendingPathComponent(".stowmark-diverged")
     }
 
     public static func handoffDirectory(in root: URL) -> URL {
@@ -497,7 +515,7 @@ public enum LibraryReplica {
         }
 
         let staging = destination.deletingLastPathComponent()
-            .appendingPathComponent("cardfile-replica-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("stowmark-replica-\(UUID().uuidString)", isDirectory: true)
         try fm.createDirectory(at: staging, withIntermediateDirectories: true)
         var backupRoot: URL?
         do {
@@ -515,7 +533,7 @@ public enum LibraryReplica {
             try fm.createDirectory(at: destination, withIntermediateDirectories: true)
             if hasDatabase(at: destination) || fm.fileExists(atPath: destination.appendingPathComponent("assets").path) {
                 let stamped = destination.deletingLastPathComponent()
-                    .appendingPathComponent("Cardfile-backup-\(ISO8601DateFormatter().string(from: Date()))", isDirectory: true)
+                    .appendingPathComponent("Stowmark-backup-\(ISO8601DateFormatter().string(from: Date()))", isDirectory: true)
                 try fm.copyItem(at: destination, to: stamped)
                 backupRoot = stamped
             }
@@ -622,7 +640,7 @@ public enum CaptureHandshake {
         return nil
     }
 
-    public static func pending(requestID: UUID, message: String = "Waiting for Cardfile to finish saving.") -> CaptureResult {
+    public static func pending(requestID: UUID, message: String = "Waiting for Stowmark to finish saving.") -> CaptureResult {
         CaptureResult(status: .pending, itemID: nil, retention: nil, warnings: [], message: message)
     }
 

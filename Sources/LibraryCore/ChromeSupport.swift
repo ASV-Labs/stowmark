@@ -4,7 +4,7 @@ import Foundation
 /// Safari uses. Chrome only looks for hosts inside its own support folder, so one small JSON file
 /// has to be written per browser. Nothing here touches the library itself.
 public enum ChromeSupport {
-    public static let hostName = "com.charlesbonetti.cardfile.extension"
+    public static let hostName = "com.charlesbonetti.stowmark.extension"
     /// Pinned by the `key` field in ChromeExtension/manifest.json, so an unpacked build keeps one ID.
     public static let pinnedExtensionID = "jeojfcmnpaachoikepjbbglnnilhbjgi"
     /// Filled in after the Chrome Web Store assigns an ID on first upload.
@@ -49,7 +49,7 @@ public enum ChromeSupport {
     ]
 
     /// The sandbox rewrites `NSHomeDirectory()` to the container, but the temporary exception in
-    /// Cardfile.entitlements is relative to the account's real home.
+    /// Stowmark.entitlements is relative to the account's real home.
     private static var realHome: URL {
         if let entry = getpwuid(getuid()), let dir = entry.pointee.pw_dir {
             return URL(fileURLWithPath: String(cString: dir), isDirectory: true)
@@ -78,7 +78,7 @@ public enum ChromeSupport {
     /// `Bundle.main` is the app for the app itself and a helper directory for the bundled tool, so
     /// the enclosing `.app` is found by walking up.
     public static var hostExecutable: URL? {
-        let relative = "Contents/Helpers/CardfileChromeHost.app/Contents/MacOS/CardfileChromeHost"
+        let relative = "Contents/Helpers/StowmarkChromeHost.app/Contents/MacOS/StowmarkChromeHost"
         var candidates: [URL] = []
         var base = Bundle.main.bundleURL
         while base.path != "/" {
@@ -120,18 +120,18 @@ public enum ChromeSupport {
     public static func install() -> InstallReport {
         var report = InstallReport()
         guard let executable = hostExecutable else {
-            report.failed["Cardfile"] = "the bundled host is missing, so this copy of the app cannot serve Chrome"
+            report.failed["Stowmark"] = "the bundled host is missing, so this copy of the app cannot serve Chrome"
             return report
         }
         let manifest: [String: Any] = [
             "name": hostName,
-            "description": "Cardfile capture host",
+            "description": "Stowmark capture host",
             "path": executable.path,
             "type": "stdio",
             "allowed_origins": allowedOrigins,
         ]
         guard let data = try? JSONSerialization.data(withJSONObject: manifest, options: [.prettyPrinted, .sortedKeys]) else {
-            report.failed["Cardfile"] = "the host manifest could not be written"
+            report.failed["Stowmark"] = "the host manifest could not be written"
             return report
         }
         for browser in browsers {

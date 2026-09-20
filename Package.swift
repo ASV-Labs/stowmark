@@ -2,15 +2,15 @@
 import PackageDescription
 
 let package = Package(
-    name: "Cardfile",
+    name: "Stowmark",
     platforms: [.macOS(.v15)],
     products: [
         .library(name: "LibraryCore", targets: ["LibraryCore"]),
-        .executable(name: "Cardfile", targets: ["Cardfile"]),
-        .executable(name: "CardfileTool", targets: ["CardfileTool"]),
-        .executable(name: "CardfileExtension", targets: ["CardfileExtension"]),
-        .executable(name: "CardfileShare", targets: ["CardfileShare"]),
-        .executable(name: "CardfileChromeHost", targets: ["CardfileChromeHost"]),
+        .executable(name: "Stowmark", targets: ["Stowmark"]),
+        .executable(name: "StowmarkTool", targets: ["StowmarkTool"]),
+        .executable(name: "StowmarkExtension", targets: ["StowmarkExtension"]),
+        .executable(name: "StowmarkShare", targets: ["StowmarkShare"]),
+        .executable(name: "StowmarkChromeHost", targets: ["StowmarkChromeHost"]),
     ],
     targets: [
         .target(
@@ -18,7 +18,7 @@ let package = Package(
             linkerSettings: [.linkedLibrary("sqlite3")]
         ),
         .executableTarget(
-            name: "Cardfile",
+            name: "Stowmark",
             dependencies: ["LibraryCore"],
             linkerSettings: [
                 .linkedFramework("AppKit"),
@@ -29,11 +29,11 @@ let package = Package(
             ]
         ),
         .executableTarget(
-            name: "CardfileTool",
+            name: "StowmarkTool",
             dependencies: ["LibraryCore"]
         ),
         .executableTarget(
-            name: "CardfileExtension",
+            name: "StowmarkExtension",
             dependencies: ["LibraryCore"],
             swiftSettings: [.unsafeFlags(["-application-extension"])],
             linkerSettings: [
@@ -42,7 +42,7 @@ let package = Package(
             ]
         ),
         .executableTarget(
-            name: "CardfileShare",
+            name: "StowmarkShare",
             dependencies: ["LibraryCore"],
             swiftSettings: [.unsafeFlags(["-application-extension"])],
             linkerSettings: [
@@ -53,7 +53,7 @@ let package = Package(
             ]
         ),
         .executableTarget(
-            name: "CardfileChromeHost",
+            name: "StowmarkChromeHost",
             dependencies: ["LibraryCore"],
             linkerSettings: [.linkedFramework("AppKit")]
         ),

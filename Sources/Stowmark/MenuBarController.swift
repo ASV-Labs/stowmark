@@ -21,13 +21,13 @@ final class MenuBarController: NSObject {
 
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         if let button = item.button {
-            button.image = NSImage(systemSymbolName: "tray.and.arrow.down", accessibilityDescription: "Cardfile")
-            button.toolTip = "Cardfile — save from clipboard"
+            button.image = NSImage(systemSymbolName: "tray.and.arrow.down", accessibilityDescription: "Stowmark")
+            button.toolTip = "Stowmark — save from clipboard"
         }
 
         let menu = NSMenu()
         menu.addItem(withTitle: "Save from Clipboard", action: #selector(saveClipboard), keyEquivalent: "")
-        menu.addItem(withTitle: "Open Cardfile", action: #selector(openApp), keyEquivalent: "")
+        menu.addItem(withTitle: "Open Stowmark", action: #selector(openApp), keyEquivalent: "")
         menu.addItem(.separator())
         menu.addItem(withTitle: "Settings…", action: #selector(openSettings), keyEquivalent: "")
         menu.addItem(.separator())
@@ -71,7 +71,7 @@ final class MenuBarController: NSObject {
 
     @objc private func openSettings() {
         openApp()
-        NotificationCenter.default.post(name: .openCardfileSettings, object: nil)
+        NotificationCenter.default.post(name: .openStowmarkSettings, object: nil)
     }
 
     @objc private func hideIcon() {

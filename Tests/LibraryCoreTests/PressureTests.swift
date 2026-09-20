@@ -6,7 +6,7 @@ final class PressureTests: XCTestCase {
     private var root: URL!
 
     override func setUpWithError() throws {
-        root = FileManager.default.temporaryDirectory.appendingPathComponent("cardfile-pressure-\(UUID().uuidString)", isDirectory: true)
+        root = FileManager.default.temporaryDirectory.appendingPathComponent("stowmark-pressure-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
     }
 
@@ -130,7 +130,7 @@ final class PressureTests: XCTestCase {
             XCTAssertTrue(replay.status == .saved || replay.status == .alreadySaved)
             XCTAssertNotNil(replay.itemID)
         }
-        let archive = root.appendingPathComponent("pressure.cardfile")
+        let archive = root.appendingPathComponent("pressure.stowmark")
         let summary = try again.exportArchive(to: archive)
         XCTAssertEqual(summary.itemCount, 50)
         XCTAssertEqual(summary.assetCount, 25)

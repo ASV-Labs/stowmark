@@ -169,7 +169,7 @@
         "trustworthy",
         "warm"
       ],
-      "intent": "download the Mac alpha and understand that Cardfile is a local visual library",
+      "intent": "download the Mac alpha and understand that Stowmark is a local visual library",
       "commercial_intent": null
     },
     "match": "ok",
@@ -722,7 +722,7 @@
         "trustworthy",
         "warm"
       ],
-      "primary_intent": "download the Mac alpha and understand that Cardfile is a local visual library",
+      "primary_intent": "download the Mac alpha and understand that Stowmark is a local visual library",
       "commercial_intent": "",
       "style_atlas_match": "SaaS or Technical Product",
       "selected_composition": "product-walkthrough",

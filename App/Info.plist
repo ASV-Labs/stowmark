@@ -5,19 +5,19 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-	<string>Cardfile</string>
+	<string>Stowmark</string>
 	<key>CFBundleDocumentTypes</key>
 	<array>
 		<dict>
 			<key>CFBundleTypeName</key>
-			<string>Cardfile Archive</string>
+			<string>Stowmark Archive</string>
 			<key>CFBundleTypeRole</key>
 			<string>Editor</string>
 			<key>LSHandlerRank</key>
 			<string>Owner</string>
 			<key>LSItemContentTypes</key>
 			<array>
-				<string>com.charlesbonetti.cardfile.archive</string>
+				<string>com.charlesbonetti.stowmark.archive</string>
 			</array>
 		</dict>
 		<dict>
@@ -70,35 +70,36 @@
 		</dict>
 	</array>
 	<key>CFBundleExecutable</key>
-	<string>Cardfile</string>
+	<string>Stowmark</string>
 	<key>CFBundleIconFile</key>
 	<string>AppIcon</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.charlesbonetti.cardfile</string>
+	<string>com.charlesbonetti.stowmark</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>Cardfile</string>
+	<string>Stowmark</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.0.0-alpha.11</string>
+	<string>1.0.0-alpha.12</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
 			<key>CFBundleTypeRole</key>
 			<string>Editor</string>
 			<key>CFBundleURLName</key>
-			<string>com.charlesbonetti.cardfile.save</string>
+			<string>com.charlesbonetti.stowmark.save</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
+				<string>stowmark</string>
 				<string>cardfile</string>
 				<string>mymind</string>
 			</array>
 		</dict>
 	</array>
 	<key>CFBundleVersion</key>
-	<string>11</string>
+	<string>12</string>
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.productivity</string>
 	<key>LSMinimumSystemVersion</key>
@@ -113,12 +114,12 @@
 			<key>NSMenuItem</key>
 			<dict>
 				<key>default</key>
-				<string>Save to Cardfile</string>
+				<string>Save to Stowmark</string>
 			</dict>
 			<key>NSMessage</key>
 			<string>saveSelection</string>
 			<key>NSPortName</key>
-			<string>Cardfile</string>
+			<string>Stowmark</string>
 			<key>NSSendTypes</key>
 			<array>
 				<string>public.utf8-plain-text</string>
@@ -135,13 +136,14 @@
 				<string>public.zip-archive</string>
 			</array>
 			<key>UTTypeDescription</key>
-			<string>Cardfile Archive</string>
+			<string>Stowmark Archive</string>
 			<key>UTTypeIdentifier</key>
-			<string>com.charlesbonetti.cardfile.archive</string>
+			<string>com.charlesbonetti.stowmark.archive</string>
 			<key>UTTypeTagSpecification</key>
 			<dict>
 				<key>public.filename-extension</key>
 				<array>
+					<string>stowmark</string>
 					<string>cardfile</string>
 					<string>mymind</string>
 				</array>

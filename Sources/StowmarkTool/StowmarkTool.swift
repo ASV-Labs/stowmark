@@ -2,7 +2,7 @@ import Foundation
 import LibraryCore
 
 @main
-struct CardfileTool {
+struct StowmarkTool {
     static func main() async {
         do {
             let args = Array(CommandLine.arguments.dropFirst())
@@ -154,7 +154,7 @@ struct CardfileTool {
             check("private-no-fetch", false, "missing item")
         }
 
-        let archive = FileManager.default.temporaryDirectory.appendingPathComponent("cardfile-pressure-\(UUID().uuidString).cardfile")
+        let archive = FileManager.default.temporaryDirectory.appendingPathComponent("stowmark-pressure-\(UUID().uuidString).stowmark")
         let summary = try store.exportArchive(to: archive)
         check("export", summary.itemCount >= 1, "items=\(summary.itemCount)")
 
@@ -189,8 +189,8 @@ struct CardfileTool {
 
     static func printUsage() {
         print("""
-        CardfileTool status|save <url> [title]|search <query>|seed [count]|export <path>|pressure
-        CardfileTool chrome-install|chrome-status|chrome-remove
+        StowmarkTool status|save <url> [title]|search <query>|seed [count]|export <path>|pressure
+        StowmarkTool chrome-install|chrome-status|chrome-remove
         """)
     }
 }

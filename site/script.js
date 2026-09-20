@@ -17,6 +17,10 @@
     video.playsInline = true;
     video.preload = "metadata";
     video.setAttribute("controlslist", "nodownload");
+    video.style.width = "100%";
+    video.style.height = "auto";
+    video.style.background = "#1F1A16";
+    video.style.display = "block";
     const source = document.createElement("source");
     source.src = src;
     source.type = "video/mp4";

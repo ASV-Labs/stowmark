@@ -6,7 +6,7 @@ enum PageFetch {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.timeoutIntervalForRequest = 20
         configuration.httpAdditionalHeaders = [
-            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 15_0) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15 Cardfile/1.0",
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 15_0) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15 Stowmark/1.0",
             "Accept": "text/html,application/xhtml+xml,image/jpeg,image/png,image/webp;q=0.8,*/*;q=0.5",
         ]
         return URLSession(configuration: configuration)

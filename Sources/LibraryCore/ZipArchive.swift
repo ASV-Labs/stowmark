@@ -68,7 +68,7 @@ enum ZipArchive {
     static func read(from url: URL) throws -> [Entry] {
         let data = try Data(contentsOf: url)
         guard let eocd = rangeOfEOCD(in: data) else {
-            throw LibraryError.archive("That file is not a Cardfile archive.")
+            throw LibraryError.archive("That file is not a Stowmark archive.")
         }
         let count = int(data, eocd + 10, 2)
         let centralSize = int(data, eocd + 12, 4)

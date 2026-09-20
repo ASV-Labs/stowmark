@@ -6,21 +6,21 @@ source "$ROOT/scripts/version.sh"
 
 IDENTITY="${CODE_SIGN_IDENTITY:-Developer ID Application: CHARLES B BONETTI (6KZQK3A2B3)}"
 DIST="$ROOT/dist"
-APP="$DIST/Cardfile.app"
-DMG="$DIST/Cardfile-$VERSION.dmg"
+APP="$DIST/Stowmark.app"
+DMG="$DIST/Stowmark-$VERSION.dmg"
 STAGE="$DIST/dmg-stage"
 NOTES="$DIST/ALPHA-NOTES.md"
 
 echo "== Version $VERSION (build $BUILD) =="
 
 echo "== Building release =="
-swift build -c release --product Cardfile
-swift build -c release --product CardfileTool
+swift build -c release --product Stowmark
+swift build -c release --product StowmarkTool
 
 echo "== Assembling app bundle =="
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources" "$APP/Contents/Helpers"
-cp "$ROOT/.build/release/Cardfile" "$APP/Contents/MacOS/Cardfile"
+cp "$ROOT/.build/release/Stowmark" "$APP/Contents/MacOS/Stowmark"
 cp "$ROOT/App/Info.plist" "$APP/Contents/Info.plist"
 stamp_plist "$APP/Contents/Info.plist"
 cp "$ROOT/App/Resources/"*.png "$APP/Contents/Resources/" 2>/dev/null || true
@@ -44,8 +44,8 @@ echo "== Diagnostic tool =="
 "$ROOT/scripts/assemble-tool.sh" "$APP"
 
 echo "== Signing =="
-codesign --force --options runtime --timestamp --entitlements "$ROOT/App/Cardfile.entitlements" --sign "$IDENTITY" "$APP/Contents/MacOS/Cardfile"
-codesign --force --options runtime --timestamp --entitlements "$ROOT/App/Cardfile.entitlements" --sign "$IDENTITY" "$APP"
+codesign --force --options runtime --timestamp --entitlements "$ROOT/App/Stowmark.entitlements" --sign "$IDENTITY" "$APP/Contents/MacOS/Stowmark"
+codesign --force --options runtime --timestamp --entitlements "$ROOT/App/Stowmark.entitlements" --sign "$IDENTITY" "$APP"
 codesign --verify --deep --strict --verbose=2 "$APP"
 
 echo "== Building DMG =="
@@ -54,32 +54,32 @@ mkdir -p "$STAGE"
 cp -R "$APP" "$STAGE/"
 ln -s /Applications "$STAGE/Applications"
 cat > "$STAGE/README-ALPHA.txt" <<EOF
-Cardfile — Alpha $VERSION
+Stowmark — Alpha $VERSION
 
 Local-first visual library for links, images, excerpts, and PDFs.
 Proprietary evaluation license — see LICENSE in the repository.
 Not notarized: first launch is right-click → Open.
 
-Export your current library from Settings before replacing an older Cardfile.
+Export your current library from Settings before replacing an older Stowmark.
 
-1. Drag "Cardfile" into Applications.
+1. Drag "Stowmark" into Applications.
 2. First launch: right-click the app → Open (Gatekeeper).
 3. Paste a link into the capture bar at the bottom, press Return.
 4. Search with Command-F.
 5. Use the layout switcher for Cards, Rows & Columns, or Covers.
 6. The gear opens Settings. Appearance lives there.
 
-Safari: Settings → Capture → Turn on Cardfile in Safari… then enable the extension.
+Safari: Settings → Capture → Turn on Stowmark in Safari… then enable the extension.
 Save Page is a click, not automatic. "Saved" appears only after the library confirms it.
 
-Share: from Safari, Chrome, Arc, Preview, Finder, or Notes, choose Share → Cardfile.
+Share: from Safari, Chrome, Arc, Preview, Finder, or Notes, choose Share → Stowmark.
 Chrome: Settings → Capture → Install Chrome capture, then load the Chrome extension
 (developer mode or the Web Store listing when published).
 
 Services menu, Dock drop, and Shortcuts also save into the same library.
 EOF
 
-hdiutil create -volname "Cardfile Alpha" -srcfolder "$STAGE" -ov -format UDZO "$DMG"
+hdiutil create -volname "Stowmark Alpha" -srcfolder "$STAGE" -ov -format UDZO "$DMG"
 rm -rf "$STAGE"
 
 codesign --force --sign "$IDENTITY" "$DMG" || true
@@ -87,20 +87,22 @@ codesign --force --sign "$IDENTITY" "$DMG" || true
 echo "== Verify =="
 spctl --assess --type open --context context:primarySignature -v "$APP" 2>&1 || true
 ls -lh "$DMG" "$APP"
-SHA="$(shasum -a 256 "$DMG" | tee "$DIST/Cardfile-$VERSION.dmg.sha256" | awk '{print $1}')"
+SHA="$(shasum -a 256 "$DMG" | tee "$DIST/Stowmark-$VERSION.dmg.sha256" | awk '{print $1}')"
 
 cat > "$NOTES" <<EOF
-# Cardfile Alpha $VERSION
+# Stowmark Alpha $VERSION
 
-Public alpha. Local-first Mac visual library (rebranded from My Mind). Proprietary evaluation license — see \`LICENSE\`.
+**Your visual library. On your Mac.**
+
+Public alpha. Proprietary evaluation license — see \`LICENSE\`. The library is local; retention labels say what was actually saved.
 
 ## Installer
 
-\`dist/Cardfile-$VERSION.dmg\`
+\`dist/Stowmark-$VERSION.dmg\`
 
 SHA-256: \`$SHA\`
 
-1. Drag **Cardfile** into Applications.
+1. Drag **Stowmark** into Applications.
 2. First launch: right-click → **Open** (not notarized yet).
 3. Paste a link into the capture bar, use the menu bar icon, or Safari / Share / Services / Dock / Shortcuts / Chrome.
 4. Search with Command-F. Layout switcher: Cards, Rows & Columns, Covers.
@@ -114,7 +116,7 @@ SHA-256: \`$SHA\`
 - Chrome native messaging host + unpackable Chrome extension (Web Store still pending)
 - Menu bar capture (clipboard save + open library)
 - Thumbnail cache, drop of links/images/PDFs, closed-app Safari absorb
-- Legacy My Mind library / \`mymind://\` / \`.mymind\` archive migration accepted
+- Continuity: migrates Cardfile / My Mind Application Support + App Groups; accepts \`stowmark://\`, \`cardfile://\`, \`mymind://\`; restores \`.stowmark\`, \`.cardfile\`, \`.mymind\`
 
 ## Known limits
 
@@ -123,6 +125,7 @@ SHA-256: \`$SHA\`
 - GIF / WebP / TIFF / SVG / video not accepted yet
 - No Retry button after a failed save
 - Opt-in clipboard watcher not built
+- Name not trademark-cleared; preliminary screening only
 
 ## Sign
 
