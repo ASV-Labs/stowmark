@@ -104,6 +104,18 @@ struct StowmarkApp: App {
                 }
                 .keyboardShortcut(",", modifiers: .command)
             }
+            CommandGroup(replacing: .help) {
+                Button("Stowmark Help") {
+                    UserDefaults.standard.set("help", forKey: "stowmark.settingsTab")
+                    NotificationCenter.default.post(name: .openStowmarkHelp, object: nil)
+                    NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+                }
+                .keyboardShortcut("/", modifiers: [.command, .shift])
+                Button("Settings…") {
+                    NotificationCenter.default.post(name: .openStowmarkSettings, object: nil)
+                    NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+                }
+            }
             CommandMenu("View") {
                 ForEach(ViewMode.allCases) { mode in
                     Button(mode.label) { model.setViewMode(mode) }

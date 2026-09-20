@@ -14,10 +14,10 @@ The library is local. Each item shows what was actually saved — a bookmark, a 
 
 Download the DMG from the [latest GitHub release](https://github.com/P0GL0L/my-mind/releases/latest), drag **Stowmark** into Applications, then right-click → Open.
 
-- Paste a link into the capture bar, or use Safari / Share / Services / Dock / Shortcuts / Chrome / the menu bar icon
+- Paste a link into the capture bar, or use Share / Services / Dock / Shortcuts / the menu bar (browser extensions are Coming soon)
 - Search with Command-F (“Search your library”)
 - Layout switcher: Cards, Rows & Columns, Covers
-- Gear → Settings (Appearance, Capture, library export/restore)
+- Settings (⌘,) — General, Library, Capture, Help. Help → Stowmark Help (⇧⌘/) opens the in-app guide.
 
 Export writes a **Stowmark Library** (`.stowmark`). Older `.cardfile` and `.mymind` archives still restore.
 
