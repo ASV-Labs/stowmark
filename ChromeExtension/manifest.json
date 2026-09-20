@@ -1,0 +1,44 @@
+{
+  "manifest_version": 3,
+  "default_locale": "en",
+  "name": "My Mind",
+  "description": "Save the current page or selection into My Mind on this Mac.",
+  "version": "1.0.0",
+  "minimum_chrome_version": "116",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4cSQlrVvDZ5ptGx4FDLtj3CkuHwsx6t8qYZssdL1/HJAf8sVaBZ1sMF4UpkCubdBQEbmnLFPQBOavZs0uhZ+twc0bpyobGcCucBIySxkjeGxiPL0uSr7Nd5e2lYWJsRrDJ4Ovgsk+/0i160VJK/tiw9AXF7ti1poo528InbUqWHkXeT3ODDjNwLR21rTKKjU/BEf6fAT+f7tFyBV1uTG/Y4bxoYHLO5gxWBrjBouk2n/zbo0jueeOaWA/u+Qp5ykDy1EEqOaNWaFNO9KsWcufIVJRBtCZBSBnKhaOvDQmXg8sQAh3B7jSx0ZIzfF0fnBwLEGkuQdRmoiR8OhlAtvIwIDAQAB",
+  "icons": {
+    "48": "images/icon-48.png",
+    "96": "images/icon-96.png",
+    "128": "images/icon-128.png",
+    "256": "images/icon-256.png",
+    "512": "images/icon-512.png"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "images/toolbar-16.png",
+      "19": "images/toolbar-19.png",
+      "32": "images/toolbar-32.png",
+      "38": "images/toolbar-38.png"
+    }
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "permissions": ["activeTab", "nativeMessaging", "contextMenus"],
+  "host_permissions": ["<all_urls>"],
+  "commands": {
+    "save-page": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+S",
+        "mac": "Command+Shift+S"
+      },
+      "description": "Save page to My Mind"
+    }
+  },
+  "content_scripts": [{
+    "js": ["content.js"],
+    "matches": ["http://*/*", "https://*/*"]
+  }]
+}

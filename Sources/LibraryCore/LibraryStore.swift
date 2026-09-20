@@ -102,8 +102,13 @@ public final class LibraryStore: @unchecked Sendable {
     }
 
     public static func openForExtension() throws -> LibraryStore {
+        if let override = ProcessInfo.processInfo.environment["MYMIND_ROOT"], !override.isEmpty {
+            let root = URL(fileURLWithPath: override, isDirectory: true)
+            try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+            return try LibraryStore(root: root, usesSharedContainer: false)
+        }
         guard let shared = usableSharedRoot() else {
-            throw LibraryError.migration("Safari cannot see the shared library on this Mac.")
+            throw LibraryError.migration("The browser cannot see the shared library on this Mac.")
         }
         if FileManager.default.fileExists(atPath: StorageLocator.divergedMarker(in: shared).path) {
             throw LibraryError.migration("The Mac app and Safari libraries differ. Open My Mind to finish this save.")
@@ -112,6 +117,27 @@ public final class LibraryStore: @unchecked Sendable {
             throw LibraryError.migration("The shared library is not ready yet.")
         }
         return try LibraryStore(root: shared, usesSharedContainer: true)
+    }
+
+    /// Walks the same steps as `openForExtension` and reports where it stops. Support only.
+    public static func extensionOpenDiagnosis() -> [String] {
+        var lines: [String] = []
+        guard let shared = StorageLocator.sharedRoot() else {
+            lines.append("shared container: unavailable")
+            return lines
+        }
+        lines.append("shared container: \(shared.path)")
+        lines.append("writable: \(StorageLocator.isWritableDirectory(shared))")
+        lines.append("looks like test fixture: \(looksLikeTestFixture(root: shared))")
+        lines.append("diverged marker: \(FileManager.default.fileExists(atPath: StorageLocator.divergedMarker(in: shared).path))")
+        lines.append("has database: \(LibraryReplica.hasDatabase(at: shared))")
+        do {
+            let store = try LibraryStore(root: shared, usesSharedContainer: true)
+            lines.append("open: succeeded with \((try? store.counts().all).map(String.init) ?? "unknown") items")
+        } catch {
+            lines.append("open: failed with \(error)")
+        }
+        return lines
     }
 
     private static func usableSharedRoot() -> URL? {

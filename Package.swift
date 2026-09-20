@@ -10,6 +10,7 @@ let package = Package(
         .executable(name: "MyMindTool", targets: ["MyMindTool"]),
         .executable(name: "MyMindExtension", targets: ["MyMindExtension"]),
         .executable(name: "MyMindShare", targets: ["MyMindShare"]),
+        .executable(name: "MyMindChromeHost", targets: ["MyMindChromeHost"]),
     ],
     targets: [
         .target(
@@ -50,6 +51,11 @@ let package = Package(
                 .linkedFramework("UniformTypeIdentifiers"),
                 .unsafeFlags(["-Xlinker", "-e", "-Xlinker", "_NSExtensionMain"]),
             ]
+        ),
+        .executableTarget(
+            name: "MyMindChromeHost",
+            dependencies: ["LibraryCore"],
+            linkerSettings: [.linkedFramework("AppKit")]
         ),
         .testTarget(name: "LibraryCoreTests", dependencies: ["LibraryCore"]),
     ]

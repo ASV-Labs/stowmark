@@ -3,14 +3,35 @@ const undo = document.getElementById("undo");
 const NATIVE_ID = "com.charlesbonetti.mymind.extension";
 let lastRequestId = null;
 
+// Safari and Firefox expose `browser`; Chrome, Arc, Brave, and Edge expose `chrome`.
+// A distinct name is used so this never shadows a namespace the browser already defines.
+const ext = globalThis.browser ?? globalThis.chrome;
+const HAS_PROMISE_NATIVE = globalThis.browser !== undefined;
+
+async function sendNative(payload) {
+  if (HAS_PROMISE_NATIVE) {
+    return await ext.runtime.sendNativeMessage(NATIVE_ID, payload);
+  }
+  return await new Promise((resolve, reject) => {
+    ext.runtime.sendNativeMessage(NATIVE_ID, payload, (response) => {
+      const failure = ext.runtime.lastError;
+      if (failure) {
+        reject(new Error(failure.message ?? "The native host did not answer."));
+      } else {
+        resolve(response);
+      }
+    });
+  });
+}
+
 async function activeTab() {
-  const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+  const [tab] = await ext.tabs.query({ active: true, currentWindow: true });
   return tab;
 }
 
 async function selectionFromTab(tab) {
   try {
-    const response = await browser.tabs.sendMessage(tab.id, { action: "getSelection" });
+    const response = await ext.tabs.sendMessage(tab.id, { action: "getSelection" });
     return response?.text ?? "";
   } catch {
     return "";
@@ -38,7 +59,7 @@ async function send(action, extras = {}) {
   status.textContent = "Saving…";
   undo.hidden = true;
   try {
-    let response = await browser.runtime.sendNativeMessage(NATIVE_ID, payload);
+    let response = await sendNative(payload);
     if (response?.requestId) lastRequestId = response.requestId;
     if (response?.status === "pending") {
       status.textContent = response.message || "Waiting for My Mind to finish saving.";
@@ -57,7 +78,7 @@ async function waitForReceipt(requestId) {
   for (let attempt = 0; attempt < 40; attempt += 1) {
     await new Promise((resolve) => setTimeout(resolve, 500));
     try {
-      const response = await browser.runtime.sendNativeMessage(NATIVE_ID, {
+      const response = await sendNative({
         action: "receipt",
         requestId,
       });
@@ -89,7 +110,7 @@ document.getElementById("undo").addEventListener("click", async () => {
   if (!lastRequestId) return;
   status.textContent = "Saving…";
   try {
-    const response = await browser.runtime.sendNativeMessage(NATIVE_ID, {
+    const response = await sendNative({
       action: "undo",
       requestId: lastRequestId,
     });
@@ -100,5 +121,7 @@ document.getElementById("undo").addEventListener("click", async () => {
   undo.hidden = true;
 });
 document.getElementById("open").addEventListener("click", () => {
-  browser.runtime.sendNativeMessage(NATIVE_ID, { action: "openApp" });
+  sendNative({ action: "openApp" }).catch(() => {
+    status.textContent = "Could not reach My Mind.";
+  });
 });

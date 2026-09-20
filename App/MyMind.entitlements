@@ -12,5 +12,18 @@
 	<array>
 		<string>group.com.charlesbonetti.mymind</string>
 	</array>
+	<!-- Chromium browsers only read native messaging hosts from their own support folder, so
+	     installing Chrome capture means writing one JSON file into each of these. -->
+	<key>com.apple.security.temporary-exception.files.home-relative-path.read-write</key>
+	<array>
+		<string>/Library/Application Support/Google/Chrome/NativeMessagingHosts/</string>
+		<string>/Library/Application Support/Google/Chrome Beta/NativeMessagingHosts/</string>
+		<string>/Library/Application Support/Google/Chrome Canary/NativeMessagingHosts/</string>
+		<string>/Library/Application Support/Chromium/NativeMessagingHosts/</string>
+		<string>/Library/Application Support/BraveSoftware/Brave-Browser/NativeMessagingHosts/</string>
+		<string>/Library/Application Support/Microsoft Edge/NativeMessagingHosts/</string>
+		<string>/Library/Application Support/Vivaldi/NativeMessagingHosts/</string>
+		<string>/Library/Application Support/Arc/User Data/NativeMessagingHosts/</string>
+	</array>
 </dict>
 </plist>

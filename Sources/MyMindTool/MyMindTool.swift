@@ -10,6 +10,31 @@ struct MyMindTool {
                 printUsage()
                 exit(2)
             }
+
+            // These run before the library is opened, because they are about browser wiring.
+            switch command {
+            case "chrome-install":
+                let report = ChromeSupport.install()
+                print(report.summary)
+                if let host = ChromeSupport.hostExecutable { print("host=\(host.path)") }
+                print("origins=\(ChromeSupport.allowedOrigins.joined(separator: " "))")
+                exit(report.failed.isEmpty ? 0 : 1)
+            case "chrome-status":
+                print("bundle=\(Bundle.main.bundleURL.path)")
+                print("host=\(ChromeSupport.hostExecutable?.path ?? "missing")")
+                for browser in ChromeSupport.presentBrowsers() {
+                    print("\(browser.name)\t\(browser.installed ? "ready" : "not installed")")
+                }
+                for line in LibraryStore.extensionOpenDiagnosis() { print(line) }
+                exit(0)
+            case "chrome-remove":
+                let report = ChromeSupport.remove()
+                print(report.installed.isEmpty ? "nothing to remove" : "removed for \(report.installed.joined(separator: ", "))")
+                exit(report.failed.isEmpty ? 0 : 1)
+            default:
+                break
+            }
+
             let store = try LibraryStore.openLive()
             switch command {
             case "status":
@@ -165,6 +190,7 @@ struct MyMindTool {
     static func printUsage() {
         print("""
         MyMindTool status|save <url> [title]|search <query>|seed [count]|export <path>|pressure
+        MyMindTool chrome-install|chrome-status|chrome-remove
         """)
     }
 }

@@ -8,6 +8,7 @@ struct LibraryShell: View {
     @Environment(\.colorScheme) private var scheme
     @Environment(\.colorSchemeContrast) private var contrast
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.openSettings) private var openSettings
     @FocusState private var searchFocused: Bool
     @FocusState private var captureFocused: Bool
     @State private var importFile = false
@@ -77,6 +78,10 @@ struct LibraryShell: View {
             if let label = note.object as? String {
                 model.addTagFilter(label)
             }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .openMyMindSettings)) { _ in
+            NSApp.activate(ignoringOtherApps: true)
+            openSettings()
         }
         .fileImporter(isPresented: $importFile, allowedContentTypes: importTypes) { result in
             if case .success(let url) = result { model.importFile(url) }
@@ -230,7 +235,8 @@ struct LibraryShell: View {
             Spacer()
             placeRow("Trash", count: model.trashCount, place: .trash, symbol: "trash")
             Button {
-                model.openSettings()
+                NSApp.activate(ignoringOtherApps: true)
+                openSettings()
             } label: {
                 Image(systemName: "gearshape")
                     .font(.title3)

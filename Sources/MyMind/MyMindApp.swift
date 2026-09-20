@@ -97,9 +97,11 @@ struct MyMindApp: App {
                 Button("Undo Last Save") { model.undoLastCapture() }
                     .keyboardShortcut("z", modifiers: .command)
             }
-            CommandGroup(after: .appSettings) {
-                Button("My Mind Settings…") { model.openSettings() }
-                    .keyboardShortcut(",", modifiers: .command)
+            CommandGroup(replacing: .appSettings) {
+                SettingsLink {
+                    Text("Settings…")
+                }
+                .keyboardShortcut(",", modifiers: .command)
             }
             CommandMenu("View") {
                 ForEach(ViewMode.allCases) { mode in

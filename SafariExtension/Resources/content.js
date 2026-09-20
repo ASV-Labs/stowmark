@@ -1,4 +1,7 @@
-browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+// Safari and Firefox expose `browser`; Chromium browsers expose `chrome`.
+const ext = globalThis.browser ?? globalThis.chrome;
+
+ext.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message?.action === "getSelection") {
     sendResponse({ text: window.getSelection ? window.getSelection().toString() : "" });
     return;

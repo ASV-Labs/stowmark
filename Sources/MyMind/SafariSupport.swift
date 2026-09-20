@@ -11,8 +11,10 @@ enum SafariSupport {
         var safariToolbarClickSaves: Bool
     }
 
+    /// Every Safari reply below uses the async form. Safari answers on an XPC queue, and the
+    /// completion-handler form makes the reply block actor-isolated, which traps on current macOS.
     static func openExtensionPreferences() {
-        SFSafariApplication.showPreferencesForExtension(withIdentifier: extensionIdentifier) { _ in }
+        Task { try? await SFSafariApplication.showPreferencesForExtension(withIdentifier: extensionIdentifier) }
     }
 
     static var toolbarClickSavesImmediately: Bool {
@@ -21,25 +23,22 @@ enum SafariSupport {
 
     static func setToolbarClickSavesImmediately(_ enabled: Bool) {
         writeToolbarSettings(ToolbarSettings(safariToolbarClickSaves: enabled))
-        SFSafariApplication.dispatchMessage(
-            withName: "capture-settings",
-            toExtensionWithIdentifier: extensionIdentifier,
-            userInfo: ["safariToolbarClickSaves": enabled]
-        ) { _ in }
+        Task {
+            try? await SFSafariApplication.dispatchMessage(
+                withName: "capture-settings",
+                toExtensionWithIdentifier: extensionIdentifier,
+                userInfo: ["safariToolbarClickSaves": enabled]
+            )
+        }
     }
 
     static func extensionStateLabel() async -> String {
         guard NSClassFromString("SFSafariExtensionManager") != nil else { return "Not found" }
-        return await withCheckedContinuation { continuation in
-            SFSafariExtensionManager.getStateOfSafariExtension(withIdentifier: extensionIdentifier) { state, error in
-                let label: String
-                if error == nil, let state {
-                    label = state.isEnabled ? "On" : "Off"
-                } else {
-                    label = "Not found"
-                }
-                continuation.resume(returning: label)
-            }
+        do {
+            let state = try await SFSafariExtensionManager.stateOfSafariExtension(withIdentifier: extensionIdentifier)
+            return state.isEnabled ? "On" : "Off"
+        } catch {
+            return "Not found"
         }
     }
 

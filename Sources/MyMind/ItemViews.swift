@@ -662,6 +662,7 @@ struct ItemPreview: View {
 
 extension Notification.Name {
     static let filterTag = Notification.Name("MyMind.filterTag")
+    static let openMyMindSettings = Notification.Name("MyMind.openSettings")
 }
 
 struct CoverTile: View {

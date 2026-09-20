@@ -18,7 +18,6 @@ echo "== Assembling app bundle =="
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources" "$APP/Contents/Helpers"
 cp "$ROOT/.build/release/MyMind" "$APP/Contents/MacOS/MyMind"
-cp "$ROOT/.build/release/MyMindTool" "$APP/Contents/Helpers/MyMindTool"
 cp "$ROOT/App/Info.plist" "$APP/Contents/Info.plist"
 cp "$ROOT/App/Resources/"*.png "$APP/Contents/Resources/" 2>/dev/null || true
 if [[ -f "$ROOT/App/Resources/AppIcon.icns" ]]; then
@@ -34,8 +33,13 @@ echo "== Safari extension =="
 echo "== Share extension =="
 "$ROOT/scripts/assemble-share-appex.sh" "$APP"
 
+echo "== Chrome native messaging host =="
+"$ROOT/scripts/assemble-chrome-host.sh" "$APP"
+
+echo "== Diagnostic tool =="
+"$ROOT/scripts/assemble-tool.sh" "$APP"
+
 echo "== Signing =="
-codesign --force --options runtime --timestamp --entitlements "$ROOT/App/MyMind.entitlements" --sign "$IDENTITY" "$APP/Contents/Helpers/MyMindTool"
 codesign --force --options runtime --timestamp --entitlements "$ROOT/App/MyMind.entitlements" --sign "$IDENTITY" "$APP/Contents/MacOS/MyMind"
 codesign --force --options runtime --timestamp --entitlements "$ROOT/App/MyMind.entitlements" --sign "$IDENTITY" "$APP"
 codesign --verify --deep --strict --verbose=2 "$APP"

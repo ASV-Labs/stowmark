@@ -1,24 +1,43 @@
 const NATIVE_ID = "com.charlesbonetti.mymind.extension";
 
+// Safari and Firefox expose `browser`; Chrome, Arc, Brave, and Edge expose `chrome`.
+// A distinct name is used so this never shadows a namespace the browser already defines.
+const ext = globalThis.browser ?? globalThis.chrome;
+// Only Safari and Firefox let the app push a message into the extension.
+const SUPPORTS_NATIVE_PUSH = globalThis.browser !== undefined;
+
 async function native(payload) {
-  return await browser.runtime.sendNativeMessage(NATIVE_ID, payload);
+  if (SUPPORTS_NATIVE_PUSH) {
+    return await ext.runtime.sendNativeMessage(NATIVE_ID, payload);
+  }
+  // Chrome's callback form is the one guaranteed across Chromium versions.
+  return await new Promise((resolve, reject) => {
+    ext.runtime.sendNativeMessage(NATIVE_ID, payload, (response) => {
+      const failure = ext.runtime.lastError;
+      if (failure) {
+        reject(new Error(failure.message ?? "The native host did not answer."));
+      } else {
+        resolve(response);
+      }
+    });
+  });
 }
 
 function ensureMenus() {
   const create = () => {
-    browser.contextMenus.create({ id: "save-page", title: "Save page to My Mind", contexts: ["page"] });
-    browser.contextMenus.create({ id: "save-selection", title: "Save selection to My Mind", contexts: ["selection"] });
-    browser.contextMenus.create({ id: "save-link", title: "Save link to My Mind", contexts: ["link"] });
-    browser.contextMenus.create({ id: "save-image", title: "Save image to My Mind", contexts: ["image"] });
-    browser.contextMenus.create({ id: "save-image-link", title: "Save image link to My Mind", contexts: ["image"] });
+    ext.contextMenus.create({ id: "save-page", title: "Save page to My Mind", contexts: ["page"] });
+    ext.contextMenus.create({ id: "save-selection", title: "Save selection to My Mind", contexts: ["selection"] });
+    ext.contextMenus.create({ id: "save-link", title: "Save link to My Mind", contexts: ["link"] });
+    ext.contextMenus.create({ id: "save-image", title: "Save image to My Mind", contexts: ["image"] });
+    ext.contextMenus.create({ id: "save-image-link", title: "Save image link to My Mind", contexts: ["image"] });
   };
-  if (browser.contextMenus.removeAll) {
-    browser.contextMenus.removeAll().then(create).catch(create);
+  if (ext.contextMenus.removeAll) {
+    ext.contextMenus.removeAll().then(create).catch(create);
   } else {
     create();
   }
 }
-browser.runtime.onInstalled.addListener(() => {
+ext.runtime.onInstalled.addListener(() => {
   ensureMenus();
   refreshToolbarMode();
 });
@@ -36,16 +55,16 @@ async function savePageTab(tab) {
   await paintBadge(tab.id, response);
 }
 
-browser.commands?.onCommand.addListener(async (command) => {
+ext.commands?.onCommand.addListener(async (command) => {
   if (command !== "save-page") return;
-  const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+  const [tab] = await ext.tabs.query({ active: true, currentWindow: true });
   await savePageTab(tab);
 });
 
 function applyToolbarMode(enabled) {
-  if (!browser.action?.setPopup) return;
+  if (!ext.action?.setPopup) return;
   const popup = enabled ? "" : "popup.html";
-  browser.action.setPopup({ popup }).catch(() => {});
+  ext.action.setPopup({ popup }).catch(() => {});
 }
 
 async function refreshToolbarMode() {
@@ -59,40 +78,44 @@ async function refreshToolbarMode() {
   }
 }
 
-if (browser.runtime.onStartup) {
-  browser.runtime.onStartup.addListener(refreshToolbarMode);
+if (ext.runtime.onStartup) {
+  ext.runtime.onStartup.addListener(refreshToolbarMode);
 }
 
-try {
-  const port = browser.runtime.connectNative(NATIVE_ID);
-  port.onMessage.addListener((message) => {
-    const info = message?.userInfo ?? message ?? {};
-    if (typeof info.safariToolbarClickSaves === "boolean") {
-      applyToolbarMode(info.safariToolbarClickSaves);
-    } else if (message?.name === "capture-settings") {
-      refreshToolbarMode();
-    }
-  });
-} catch {
-  // The JSON flag is still read on the next getSettings.
+// Chrome has no equivalent of SFSafariApplication.dispatchMessage, and an idle port would keep a
+// host process alive for nothing. Chrome picks the flag up through getSettings instead.
+if (SUPPORTS_NATIVE_PUSH) {
+  try {
+    const port = ext.runtime.connectNative(NATIVE_ID);
+    port.onMessage.addListener((message) => {
+      const info = message?.userInfo ?? message ?? {};
+      if (typeof info.safariToolbarClickSaves === "boolean") {
+        applyToolbarMode(info.safariToolbarClickSaves);
+      } else if (message?.name === "capture-settings") {
+        refreshToolbarMode();
+      }
+    });
+  } catch {
+    // The JSON flag is still read on the next getSettings.
+  }
 }
 
-if (browser.action?.onClicked) {
-  browser.action.onClicked.addListener((tab) => {
+if (ext.action?.onClicked) {
+  ext.action.onClicked.addListener((tab) => {
     savePageTab(tab);
   });
 }
 
 async function paintBadge(tabId, response) {
-  if (!browser.action?.setBadgeText || tabId == null) return;
+  if (!ext.action?.setBadgeText || tabId == null) return;
   const status = response?.status;
   const text = status === "saved" || status === "already_saved" ? "✓" : status === "pending" ? "…" : "!";
-  await browser.action.setBadgeText({ text, tabId });
-  if (browser.action.setBadgeBackgroundColor) {
-    await browser.action.setBadgeBackgroundColor({ color: status === "failed" ? "#8C2F22" : "#1B5E3B", tabId });
+  await ext.action.setBadgeText({ text, tabId });
+  if (ext.action.setBadgeBackgroundColor) {
+    await ext.action.setBadgeBackgroundColor({ color: status === "failed" ? "#8C2F22" : "#1B5E3B", tabId });
   }
   setTimeout(() => {
-    browser.action.setBadgeText({ text: "", tabId });
+    ext.action.setBadgeText({ text: "", tabId });
   }, 3000);
 }
 
@@ -106,7 +129,7 @@ function bytesToBase64(buffer) {
   return btoa(binary);
 }
 
-browser.contextMenus.onClicked.addListener(async (info, tab) => {
+ext.contextMenus.onClicked.addListener(async (info, tab) => {
   const requestId = crypto.randomUUID();
   const pageURL = tab?.url ?? info.pageUrl ?? "";
   const title = tab?.title ?? "";

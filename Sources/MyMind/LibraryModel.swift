@@ -499,7 +499,29 @@ final class LibraryModel {
 
     func openSettings() {
         NSApp.activate(ignoringOtherApps: true)
-        NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+        NotificationCenter.default.post(name: .openMyMindSettings, object: nil)
+        // Bring an already-open Settings window forward if SwiftUI left it behind the library.
+        DispatchQueue.main.async {
+            Self.bringSettingsWindowForward()
+        }
+    }
+
+    private static func bringSettingsWindowForward() {
+        for window in NSApp.windows where looksLikeSettingsWindow(window) {
+            window.makeKeyAndOrderFront(nil)
+            return
+        }
+    }
+
+    private static func looksLikeSettingsWindow(_ window: NSWindow) -> Bool {
+        let identifier = window.identifier?.rawValue ?? ""
+        let autosave = window.frameAutosaveName
+        if identifier.localizedCaseInsensitiveContains("settings") { return true }
+        if autosave.localizedCaseInsensitiveContains("settings") { return true }
+        if window.title == "Settings" || window.title == "General" || window.title == "Library" || window.title == "Capture" {
+            return true
+        }
+        return false
     }
 
     func handleIncomingURL(_ url: URL) {

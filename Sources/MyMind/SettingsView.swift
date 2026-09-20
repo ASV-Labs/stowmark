@@ -6,8 +6,10 @@ struct SettingsView: View {
     @Bindable var model: LibraryModel
     @Environment(\.colorScheme) private var scheme
     @State private var status: String?
-    @State private var safariExtensionState = "Not found"
+    @State private var safariExtensionState = "Checking…"
     @State private var toolbarClickSaves = SafariSupport.toolbarClickSavesImmediately
+    @State private var chromeBrowsers: [(name: String, installed: Bool)] = []
+    @State private var chromeStoreID = ChromeSupport.storeExtensionID
 
     var body: some View {
         TabView {
@@ -154,6 +156,10 @@ struct SettingsView: View {
                     LabeledContent("Extension") {
                         Text(safariExtensionState)
                     }
+                    Button("Turn on My Mind in Safari…") {
+                        model.openSafariExtensionSettings()
+                    }
+                    .help("Opens Safari's extension settings with My Mind selected")
                     Toggle("Safari toolbar click saves immediately", isOn: $toolbarClickSaves)
                         .onChange(of: toolbarClickSaves) { _, enabled in
                             SafariSupport.setToolbarClickSavesImmediately(enabled)
@@ -174,10 +180,43 @@ struct SettingsView: View {
                         .font(.caption.monospaced())
                         .textSelection(.enabled)
                 }
-                Section("Other browsers") {
-                    Text("Chrome and Arc can use mymind://save.")
-                        .font(.callout)
-                    Text("Share and Services land in a later or parallel slice.")
+                Section("Chrome, Arc, Brave, and Edge") {
+                    if chromeBrowsers.isEmpty {
+                        Text("No Chromium browser has been run on this Mac yet.")
+                            .font(.callout)
+                            .foregroundStyle(Theme.secondary(scheme))
+                    } else {
+                        ForEach(chromeBrowsers, id: \.name) { browser in
+                            LabeledContent(browser.name) {
+                                Text(browser.installed ? "Ready" : "Not installed")
+                                    .foregroundStyle(browser.installed ? Theme.accent(scheme) : Theme.secondary(scheme))
+                            }
+                        }
+                    }
+                    HStack {
+                        Button("Install Chrome capture") { installChromeHost() }
+                        if chromeBrowsers.contains(where: \.installed) {
+                            Button("Remove") { removeChromeHost() }
+                        }
+                    }
+                    Text("This installs the helper that lets the extension save without opening My Mind. The extension itself is installed from the Chrome Web Store. The helper records where this copy of My Mind lives, so run it again if you move the app.")
+                        .font(.caption)
+                        .foregroundStyle(Theme.secondary(scheme))
+                    if let listing = ChromeSupport.storeListingURL {
+                        Link("Install the extension for Chrome", destination: listing)
+                    } else {
+                        Text("Add the Web Store ID below once the listing is published, and a one-click install link appears here.")
+                            .font(.caption)
+                            .foregroundStyle(Theme.secondary(scheme))
+                    }
+                    TextField("Web Store extension ID", text: $chromeStoreID)
+                        .onSubmit { saveChromeStoreID() }
+                    Text("Until then, load ChromeExtension in Chrome with developer mode. That build always has the ID \(ChromeSupport.pinnedExtensionID), which this Mac already trusts.")
+                        .font(.caption)
+                        .foregroundStyle(Theme.secondary(scheme))
+                }
+                Section("Any other app") {
+                    Text("Share and the Services menu save from any Mac app, and mymind://save works from a bookmarklet.")
                         .font(.callout)
                         .foregroundStyle(Theme.secondary(scheme))
                 }
@@ -186,10 +225,34 @@ struct SettingsView: View {
             .padding()
             .task {
                 safariExtensionState = await SafariSupport.extensionStateLabel()
+                chromeBrowsers = ChromeSupport.presentBrowsers()
             }
             .tabItem { Label("Capture", systemImage: "tray.and.arrow.down") }
         }
         .frame(width: 560, height: 640)
+    }
+
+    private func installChromeHost() {
+        let report = ChromeSupport.install()
+        chromeBrowsers = ChromeSupport.presentBrowsers()
+        status = report.summary
+    }
+
+    private func removeChromeHost() {
+        let report = ChromeSupport.remove()
+        chromeBrowsers = ChromeSupport.presentBrowsers()
+        status = report.installed.isEmpty
+            ? "Chrome capture was not installed."
+            : "Chrome capture removed for \(report.installed.joined(separator: ", "))."
+    }
+
+    private func saveChromeStoreID() {
+        ChromeSupport.storeExtensionID = chromeStoreID
+        chromeStoreID = ChromeSupport.storeExtensionID
+        // Existing manifests still list the old IDs until they are written again.
+        if chromeBrowsers.contains(where: \.installed) {
+            installChromeHost()
+        }
     }
 
     private func byteString(_ value: Int) -> String {
