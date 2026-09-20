@@ -1,34 +1,40 @@
 # My Mind
 
-Local-first Mac app for saving links, images, excerpts, and PDFs into a searchable visual library.
+Local-first Mac visual library for links, images, excerpts, and PDFs.
 
-Working title from the product blueprint was “Visual Library.” The shipping product name for this project is **My Mind**.
+Public alpha **1.0.0-alpha.10**. Proprietary evaluation license — see [`LICENSE`](LICENSE). Not App Store, not notarized: first launch is right-click → Open.
 
-## What works in this vertical slice
+## Install
 
-- Paste or drop a link, image, PDF, or `.webloc`
-- Import Netscape bookmark HTML with a preview before commit
-- Kind-specific cards, gallery and list, optional shelves and tags
-- Focused preview with editable title, note, kind, tags, and shelves
-- Local SQLite + FTS5 search over saved fields only
-- Honest retention states (`Bookmark`, `Image copied`, `PDF copied`, `Excerpt saved`)
-- Export / restore of a versioned `.mymind` archive
-- Safari web-extension sources and native handler that write the same store (needs Xcode packaging into an `.appex` for Safari to load)
+Download the DMG from the [latest GitHub release](https://github.com/P0GL0L/my-mind/releases/latest), drag **My Mind** into Applications, then right-click → Open.
 
-## Build / package
+- Paste a link into the capture bar, or use Safari / Share / Services / Dock / Shortcuts / Chrome
+- Search with Command-F
+- Layout switcher: Cards, Rows & Columns, Covers
+- Gear → Settings (Appearance, Capture, library export/restore)
+
+## Build from source
 
 ```bash
 swift test --filter 'LibraryCoreTests|PressureTests'
 ./scripts/make-alpha-dmg.sh
-open dist/MyMind-1.0.0-alpha.9.dmg
+open dist/MyMind-$(cat VERSION).dmg
 ```
 
-Alpha notes: `dist/ALPHA-NOTES.md`
+Version is the single line in `VERSION`. Packaging stamps every nested bundle before signing.
+
+Alpha notes land in `dist/ALPHA-NOTES.md` after a DMG build.
+
+Chrome extension (developer-mode load):
+
+```bash
+./scripts/make-chrome-extension.sh
+```
+
+## Privacy
+
+No account. No cloud library. Saving a public web link may still contact that site for metadata and a preview image unless you turn previews off in Settings. Private and loopback addresses are stored as bookmarks and are not fetched.
 
 ## Design gate
 
 See `design-note.md`, `adi-011-score-sheet.md`, and `gate-receipts/`.
-
-## Privacy posture
-
-No account. No cloud library. Saving a public web link may still contact that site for metadata and a preview image unless you turn previews off in Settings. Private and loopback addresses are stored as bookmarks and are not fetched.

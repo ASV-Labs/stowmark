@@ -1,6 +1,7 @@
 #!/bin/zsh
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+source "$ROOT/scripts/version.sh"
 APP="${1:?app bundle path}"
 IDENTITY="${CODE_SIGN_IDENTITY:-Developer ID Application: CHARLES B BONETTI (6KZQK3A2B3)}"
 
@@ -12,7 +13,9 @@ mkdir -p "$APEX/Contents/MacOS" "$APEX/Contents/Resources"
 
 cp "$ROOT/.build/release/MyMindExtension" "$APEX/Contents/MacOS/MyMindExtension"
 cp "$ROOT/SafariExtension/Info.plist" "$APEX/Contents/Info.plist"
+stamp_plist "$APEX/Contents/Info.plist"
 cp "$ROOT/SafariExtension/Resources/extension-manifest.json" "$APEX/Contents/Resources/manifest.json"
+stamp_json_version "$APEX/Contents/Resources/manifest.json"
 cp "$ROOT/SafariExtension/Resources/popup.html" "$APEX/Contents/Resources/"
 cp "$ROOT/SafariExtension/Resources/popup.js" "$APEX/Contents/Resources/"
 cp "$ROOT/SafariExtension/Resources/popup.css" "$APEX/Contents/Resources/"

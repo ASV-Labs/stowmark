@@ -1,6 +1,7 @@
 #!/bin/zsh
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+source "$ROOT/scripts/version.sh"
 APP="${1:?app bundle path}"
 IDENTITY="${CODE_SIGN_IDENTITY:-Developer ID Application: CHARLES B BONETTI (6KZQK3A2B3)}"
 
@@ -14,6 +15,7 @@ rm -rf "$HOST_APP" "$APP/Contents/Helpers/MyMindChromeHost"
 mkdir -p "$HOST_APP/Contents/MacOS"
 cp "$ROOT/.build/release/MyMindChromeHost" "$HOST_APP/Contents/MacOS/MyMindChromeHost"
 cp "$ROOT/ChromeHost/Info.plist" "$HOST_APP/Contents/Info.plist"
+stamp_plist "$HOST_APP/Contents/Info.plist"
 
 if security find-identity -v -p codesigning 2>/dev/null | grep -q "$IDENTITY"; then
   codesign --force --options runtime --timestamp \

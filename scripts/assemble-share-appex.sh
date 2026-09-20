@@ -1,6 +1,7 @@
 #!/bin/zsh
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+source "$ROOT/scripts/version.sh"
 APP="${1:?app bundle path}"
 IDENTITY="${CODE_SIGN_IDENTITY:-Developer ID Application: CHARLES B BONETTI (6KZQK3A2B3)}"
 
@@ -12,6 +13,7 @@ mkdir -p "$APEX/Contents/MacOS" "$APEX/Contents/Resources"
 
 cp "$ROOT/.build/release/MyMindShare" "$APEX/Contents/MacOS/MyMindShare"
 cp "$ROOT/ShareExtension/Info.plist" "$APEX/Contents/Info.plist"
+stamp_plist "$APEX/Contents/Info.plist"
 
 # Developer ID is optional in this environment. Ad-hoc still produces a bundle the rest of the script can nest.
 if command -v codesign >/dev/null 2>&1; then
