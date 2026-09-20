@@ -517,7 +517,7 @@ struct ItemPreview: View {
                             Button("Restore") { model.restoreSelected() }
                                 .frame(minHeight: 36)
                         } else {
-                            Button("Move to My Mind Trash") { model.trashSelected() }
+                            Button("Move to Cardfile Trash") { model.trashSelected() }
                                 .foregroundStyle(Theme.danger(scheme))
                                 .frame(minHeight: 36)
                         }
@@ -661,8 +661,8 @@ struct ItemPreview: View {
 }
 
 extension Notification.Name {
-    static let filterTag = Notification.Name("MyMind.filterTag")
-    static let openMyMindSettings = Notification.Name("MyMind.openSettings")
+    static let filterTag = Notification.Name("Cardfile.filterTag")
+    static let openCardfileSettings = Notification.Name("Cardfile.openSettings")
 }
 
 struct CoverTile: View {
@@ -913,8 +913,8 @@ private struct CardTrashButton: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.borderless)
-        .help("Move to My Mind Trash")
-        .accessibilityLabel("Move to My Mind Trash")
+        .help("Move to Cardfile Trash")
+        .accessibilityLabel("Move to Cardfile Trash")
         .accessibilityHint("Removes this item from the library. It does not use the Mac Trash.")
     }
 }

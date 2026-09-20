@@ -1,13 +1,13 @@
-# ADI-011 independent review — My Mind
+# ADI-011 independent review — Cardfile
 
 Reviewer: independent agent (not the builder)
 Rubric: ADI-011 rev 1.3 (weights A1.20 A2.20 A3.15 A4.10 A5.15 A6.10 A7.10)
-Basis: `design-note.md`, `Sources/MyMind/{LibraryShell,Theme,LibraryModel,MyMindApp,SettingsView}.swift`, `Sources/LibraryCore/LibraryStore+Records.swift`, `gate-receipts/verify.json` (static heuristics, exit 0). Builder draft in `adi-011-score-sheet.md` is superseded by this file.
+Basis: `design-note.md`, `Sources/Cardfile/{LibraryShell,Theme,LibraryModel,CardfileApp,SettingsView}.swift`, `Sources/LibraryCore/LibraryStore+Records.swift`, `gate-receipts/verify.json` (static heuristics, exit 0). Builder draft in `adi-011-score-sheet.md` is superseded by this file.
 
 Screen/flow: Library shell (sidebar + gallery/list + preview overlay)
 Platform(s): macOS (SwiftUI; design-note checker token ios)
 A1 Navigation fit:          5/5  (evidence: LibraryShell.swift NavigationSplitView + sidebar place List for All/Favorites/Shelves; preview is a trailing overlay closed by Escape/Close — not a third column or tab bar)
-A2 Platform conformance:    4/5  (evidence: MyMindApp.swift Settings scene + CommandGroup shortcuts; App/Info.plist LSMinimumSystemVersion/NSApplication; no phone tab chrome. Deducted from 5: search lives in a custom detail header rather than `.searchable`/toolbar, and verify.json still declares platform token ios while shipping Mac)
+A2 Platform conformance:    4/5  (evidence: CardfileApp.swift Settings scene + CommandGroup shortcuts; App/Info.plist LSMinimumSystemVersion/NSApplication; no phone tab chrome. Deducted from 5: search lives in a custom detail header rather than `.searchable`/toolbar, and verify.json still declares platform token ios while shipping Mac)
 A3 State completeness:      4/5  (evidence: LibraryShell empty / noResults / recovery; ItemCard fallbackLine for pending/unavailable previews; ItemPreview unavailable copy. Deducted from 5: design-note “retry” is not a control — captureDraft is cleared before save in LibraryModel.captureDraftLink, and failed saves do not restore the draft)
 A4 Template justification:  5/5  (evidence: design-note template budget 0; no TabView/tab bar, no FAB, no onboarding pager; shelves are place rows; ItemCard visual switches by ContentKind)
 A5 Visual identity system:  4/5  (evidence: Theme.swift warm paper/sidebar/card/ink + green accent/danger + Radius chip/card/bar/panel; ItemCard kind silhouettes excerpt/book/image/document. Deducted from 5: identity is coherent utility paper, but type roles stay default system fonts with only serif excerpts — not a 5-band signature system)

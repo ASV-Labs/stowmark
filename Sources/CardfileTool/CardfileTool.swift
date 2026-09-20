@@ -2,7 +2,7 @@ import Foundation
 import LibraryCore
 
 @main
-struct MyMindTool {
+struct CardfileTool {
     static func main() async {
         do {
             let args = Array(CommandLine.arguments.dropFirst())
@@ -154,7 +154,7 @@ struct MyMindTool {
             check("private-no-fetch", false, "missing item")
         }
 
-        let archive = FileManager.default.temporaryDirectory.appendingPathComponent("mymind-pressure-\(UUID().uuidString).mymind")
+        let archive = FileManager.default.temporaryDirectory.appendingPathComponent("cardfile-pressure-\(UUID().uuidString).cardfile")
         let summary = try store.exportArchive(to: archive)
         check("export", summary.itemCount >= 1, "items=\(summary.itemCount)")
 
@@ -189,8 +189,8 @@ struct MyMindTool {
 
     static func printUsage() {
         print("""
-        MyMindTool status|save <url> [title]|search <query>|seed [count]|export <path>|pressure
-        MyMindTool chrome-install|chrome-status|chrome-remove
+        CardfileTool status|save <url> [title]|search <query>|seed [count]|export <path>|pressure
+        CardfileTool chrome-install|chrome-status|chrome-remove
         """)
     }
 }

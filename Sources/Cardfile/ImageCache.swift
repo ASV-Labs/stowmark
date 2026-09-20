@@ -23,7 +23,7 @@ final class ImageCache {
         let cache = NSCache<NSString, NSImage>()
         cache.countLimit = Self.countLimit
         cache.totalCostLimit = Self.byteLimit
-        cache.name = "MyMind.ImageCache"
+        cache.name = "Cardfile.ImageCache"
         images = cache
     }
 

@@ -1,6 +1,6 @@
-# My Mind — Capture, Browser Integration, and UX Audit
+# Cardfile — Capture, Browser Integration, and UX Audit
 
-Date: 2026-09-19 · Basis: `cursor/visual-library-app` @ alpha.9 source, installed `/Applications/My Mind.app` (bundle 9, appex registered), blueprint `Visual_Library_Product_Blueprint.docx` (concept reference only).
+Date: 2026-09-19 · Basis: `cursor/visual-library-app` @ alpha.9 source, installed `/Applications/Cardfile.app` (bundle 9, appex registered), blueprint `Visual_Library_Product_Blueprint.docx` (concept reference only).
 
 This file has two parts. **Part A** is the audit (what exists, what is partial, what is missing or broken). **Part B** is the builder guide: prioritized work items with files, steps, and acceptance tests. A builder agent should work Part B top to bottom, one item per PR, and update the status column as it goes.
 
@@ -28,16 +28,16 @@ This file has two parts. **Part A** is the audit (what exists, what is partial, 
 | Bookmarklets | Dead code | `safariPageBookmarklet` / `safariExcerptBookmarklet` in `LibraryModel` are never shown in the UI. |
 | Chrome / Arc / Edge / Brave / Firefox | Missing | Blueprint gates it. No extension, no native-messaging host, no loopback server. |
 | macOS **Share** extension | Missing | Blueprint lists Share menu as a first-class entry. Would cover every browser plus Preview, Photos, Mail, Notes, Finder. |
-| macOS **Services** menu | Missing | No `NSServices`. "Save to My Mind" for selected text or URL in any app. |
+| macOS **Services** menu | Missing | No `NSServices`. "Save to Cardfile" for selected text or URL in any app. |
 | Global hotkey / quick-capture panel | Missing | No menu-bar extra, no hotkey, no frontmost-browser URL read. |
 | Apple Shortcuts / App Intents | Missing | No `AppIntent`. Would give Spotlight, Shortcuts, and Siri capture cheaply. |
 | Clipboard watcher (opt-in) | Missing | Copying a URL anywhere could surface a one-key "Save?" affordance. |
-| CLI (`MyMindTool save`) | Shipped | Dev/test only; hidden in `Contents/Helpers`. |
+| CLI (`CardfileTool save`) | Shipped | Dev/test only; hidden in `Contents/Helpers`. |
 
 ### A2. Browser integration — where we actually are
 
 **Safari**
-- The appex is embedded, signed, and registered (`pluginkit` lists `com.charlesbonetti.mymind.extension 1.0.0`). `/Applications/My Mind.app` is bundle 9 with the appex.
+- The appex is embedded, signed, and registered (`pluginkit` lists `com.charlesbonetti.cardfile.extension 1.0.0`). `/Applications/Cardfile.app` is bundle 9 with the appex.
 - Storage: app writes Application Support; a verified SQLite snapshot is replicated to the App Group container; the extension reads/writes the group copy only when fingerprints match. Diverged copies set a marker and the extension hands off via `mymind://` and returns `pending` until a receipt exists. This is honest but the **replica can lag** (only replicated at app launch), so a Safari save while the app is closed lands in the group copy and the app must re-sync on next launch. Verify `openLive` handles "group has newer items than support" — today it only copies support→group when group is empty, and group→support when support is missing. **A save made in Safari with the app closed may be stranded in the group container after the next app launch if support already has items.** This is the biggest remaining correctness risk in browser capture.
 - Popup UX: fields for shelf/note/tags are always visible; no shelf picker (free text); no tag suggestions; no keyboard shortcut; no "auto-save on click" option; no image bytes.
 - Not notarized (`spctl`: "Unnotarized Developer ID"). Users must right-click → Open.
@@ -46,7 +46,7 @@ This file has two parts. **Part A** is the audit (what exists, what is partial, 
 **Everything else (Chrome, Arc, Edge, Brave, Firefox, Orion)**
 - Nothing. Copy/paste or a bookmarklet that nobody can find.
 - Native messaging (Chrome's equivalent of Safari's handler) needs a host manifest written into `~/Library/Application Support/Google/Chrome/NativeMessagingHosts/`, which a sandboxed App Store app cannot write. Two viable transports:
-  1. **URL scheme** — extension opens `mymind://save?…`. Zero server, sandbox-safe, App Store-safe. Downside: the extension cannot get a receipt back; the app must show the confirmation instead (toast + badge), and Chrome shows a one-time "Open My Mind?" prompt.
+  1. **URL scheme** — extension opens `mymind://save?…`. Zero server, sandbox-safe, App Store-safe. Downside: the extension cannot get a receipt back; the app must show the confirmation instead (toast + badge), and Chrome shows a one-time "Open Cardfile?" prompt.
   2. **Loopback HTTP** — app listens on `127.0.0.1:<random>` with a per-install token written to a file the extension user pastes once (or discovered via URL scheme handshake). Needs `com.apple.security.network.server` (App Store allowed). Gives real receipts. More code, more attack surface.
 - Recommendation: ship (1) first behind a "Other browsers" section in Settings with install instructions and the bookmarklet as a fallback; evaluate (2) only if users demand in-extension confirmation.
 
@@ -54,7 +54,7 @@ This file has two parts. **Part A** is the audit (what exists, what is partial, 
 - macOS **Share extension** (Safari, Chrome, Arc, Firefox all populate the system Share menu with URL + title; Preview/Photos share images; Mail shares text). One appex covers every browser and most apps.
 - **Services** menu for selected text/URLs.
 - **Drag & drop** (fixed) — dragging a link or image from any browser onto the window or Dock icon.
-- **App Intent** — "Save to My Mind" in Shortcuts/Spotlight.
+- **App Intent** — "Save to Cardfile" in Shortcuts/Spotlight.
 
 ### A3. Library, storage, trust
 
@@ -130,7 +130,7 @@ Rules for the builder agent:
 ### Phase 0 — Correctness (do first)
 
 #### C-01 Fix web-link and image drops onto the window
-Status: done · Priority: P0 · Files: `Sources/MyMind/LibraryShell.swift` (`.dropDestination`), `Sources/MyMind/LibraryModel.swift` (`importDropped`, `importFile`)
+Status: done · Priority: P0 · Files: `Sources/Cardfile/LibraryShell.swift` (`.dropDestination`), `Sources/Cardfile/LibraryModel.swift` (`importDropped`, `importFile`)
 - Replace `.dropDestination(for: URL.self)` with `.onDrop(of: [.fileURL, .url, .image, .png, .jpeg, .pdf, .plainText, .utf8PlainText, .html], isTargeted:)` using `NSItemProvider`, or add a `DropPayload: Transferable` enum with representations for `URL`, `Data` (image/PDF), and `String`.
 - Routing: `isFileURL` → `importFile`; http(s) URL → `captureLink(origin: "drop")`; image data → `captureImageData(filename: "Dropped.png")` (convert to PNG via `NSBitmapImageRep`); PDF data → `runCapture(.pdf)`; string that parses as URL → `captureLink`; other non-empty string → `captureExcerpt(pageURL: <source URL if provided, else fail with "Drop text from a web page so the source is kept">)`.
 - Guard: `importFile` must early-return with `captureLink` if `!url.isFileURL`. Never call `Data(contentsOf:)` on a remote URL on the main thread.
@@ -149,10 +149,10 @@ Status: partial (draft already stays on failure; cards now say “Fetching previ
 - Accept: paste `javascript:alert(1)` → draft remains, Retry visible; paste a valid link → card shows a pending shimmer/label until the preview arrives.
 
 #### C-04 Image cache for card thumbnails
-Status: todo · Priority: P1 · Files: new `Sources/MyMind/ImageCache.swift`, `ItemViews.swift`
+Status: todo · Priority: P1 · Files: new `Sources/Cardfile/ImageCache.swift`, `ItemViews.swift`
 - `final class ImageCache { static let shared; NSCache<NSString, NSImage>; func image(for asset: AssetRecord, root: URL) async -> NSImage? }` keyed by `sha256`. Decode off-main via `Task.detached`, downsample to ≤ 2× the preview zone with `CGImageSourceCreateThumbnailAtIndex`.
 - Replace `NSImage(contentsOf:)` in `ItemCard.photo`, `CoverTile.coverImage`, `ItemPreview.object` with an `AsyncThumbnail` view.
-- Accept: `MyMindTool seed 2000`, scroll Cards at Large size — no dropped frames in Instruments; memory stays bounded (NSCache limit ~150 MB).
+- Accept: `CardfileTool seed 2000`, scroll Cards at Large size — no dropped frames in Instruments; memory stays bounded (NSCache limit ~150 MB).
 
 #### C-05 Generate PDF cover on capture
 Status: done · Priority: P2 · Files: `LibraryStore+Records.insertFile`, `Thumbnail.swift`
@@ -163,28 +163,28 @@ Status: done · Priority: P2 · Files: `LibraryStore+Records.insertFile`, `Thumb
 
 #### B-01 Safari: keyboard shortcut, badge, one-click mode, image bytes
 Status: done · Priority: P0 · Files: `SafariExtension/Resources/extension-manifest.json`, `background.js`, `popup.js`, `SafariWebExtensionHandler.swift`, `SettingsView.swift`
-- Manifest: add `"commands": { "save-page": { "suggested_key": { "default": "Ctrl+Shift+S", "mac": "Command+Shift+S" }, "description": "Save page to My Mind" } }`. In `background.js`, `browser.commands.onCommand` → `native({action:"savePage",…})` then `browser.action.setBadgeText({text:"✓", tabId})` for 3 s (or "…" while pending, "!" on failure).
+- Manifest: add `"commands": { "save-page": { "suggested_key": { "default": "Ctrl+Shift+S", "mac": "Command+Shift+S" }, "description": "Save page to Cardfile" } }`. In `background.js`, `browser.commands.onCommand` → `native({action:"savePage",…})` then `browser.action.setBadgeText({text:"✓", tabId})` for 3 s (or "…" while pending, "!" on failure).
 - Setting "Safari toolbar click saves immediately (no popup)": store in the group container as `settings` row; `background.js` reads via a `getSettings` native message on startup; when true, set `action.default_popup` to none via `browser.action.setPopup({popup:""})` and handle `browser.action.onClicked` → save + badge. Popup remains reachable via right-click → "Save with details…" context item.
-- Image bytes: for `contexts:["image"]`, fetch `info.srcUrl` **in the extension** (`fetch(srcUrl)` inherits page cookies/referrer), base64 the bytes (cap `Limits.maxAttachmentBytes`), send `{action:"saveImage", bytes, filename, pageURL}`; handler decodes and builds a `CaptureRequest(.image, file:)`. Rename menu item to "Save image to My Mind"; keep "Save image link" as a second item.
+- Image bytes: for `contexts:["image"]`, fetch `info.srcUrl` **in the extension** (`fetch(srcUrl)` inherits page cookies/referrer), base64 the bytes (cap `Limits.maxAttachmentBytes`), send `{action:"saveImage", bytes, filename, pageURL}`; handler decodes and builds a `CaptureRequest(.image, file:)`. Rename menu item to "Save image to Cardfile"; keep "Save image link" as a second item.
 - Accept: ⌘⇧S on a page → badge ✓ and item in library with app closed (through pending → receipt); image context save → "Image copied." with original bytes; toggling one-click mode changes toolbar behaviour without reinstalling.
 
 #### B-02 macOS Share extension
-Status: todo · Priority: P0 · Files: new target `Sources/MyMindShare/ShareViewController.swift`, `ShareExtension/Info.plist` (`com.apple.share-services`, `NSExtensionActivationRule` for `NSExtensionActivationSupportsWebURLWithMaxCount=1`, `…ImageWithMaxCount=10`, `…FileWithMaxCount=10`, `…Text=true`), `ShareExtension/MyMindShare.entitlements` (App Group), `Package.swift` (new executableTarget with `-application-extension`), `scripts/assemble-share-appex.sh`, `make-alpha-dmg.sh`
+Status: todo · Priority: P0 · Files: new target `Sources/CardfileShare/ShareViewController.swift`, `ShareExtension/Info.plist` (`com.apple.share-services`, `NSExtensionActivationRule` for `NSExtensionActivationSupportsWebURLWithMaxCount=1`, `…ImageWithMaxCount=10`, `…FileWithMaxCount=10`, `…Text=true`), `ShareExtension/CardfileShare.entitlements` (App Group), `Package.swift` (new executableTarget with `-application-extension`), `scripts/assemble-share-appex.sh`, `make-alpha-dmg.sh`
 - UI: compact SwiftUI sheet — title (editable), shelf picker (from group DB), tags, note, **Save** (default) / Cancel. Show retention line before saving ("Bookmark" / "Image will be copied").
-- Save through `LibraryStore.openForExtension()`; if unavailable, hand off via `mymind://save` with `requestId` and show "Opening My Mind to finish…" (never "Saved").
+- Save through `LibraryStore.openForExtension()`; if unavailable, hand off via `mymind://save` with `requestId` and show "Opening Cardfile to finish…" (never "Saved").
 - Accept: Share from Safari, Chrome, Preview (image), Finder (PDF), and Notes (text) → correct kind and retention each time, with app closed; duplicate share → "Already in your library."
 
-#### B-03 Services menu: "Save to My Mind"
-Status: done · Priority: P1 · Files: `App/Info.plist` (`NSServices`), `MyMindApp.swift` (`NSApp.servicesProvider`), new `ServicesProvider.swift`
+#### B-03 Services menu: "Save to Cardfile"
+Status: done · Priority: P1 · Files: `App/Info.plist` (`NSServices`), `CardfileApp.swift` (`NSApp.servicesProvider`), new `ServicesProvider.swift`
 - Two services: text/URL selection → `saveSelection:userData:error:` (URL → link; other text → excerpt, source unknown → store as excerpt with `On this Mac` source and a "no source" warning). `NSSendTypes: public.utf8-plain-text, public.url`.
-- Accept: select a URL in Mail → right-click → Services → Save to My Mind → item saved; works when app is not running (LaunchServices starts it).
+- Accept: select a URL in Mail → right-click → Services → Save to Cardfile → item saved; works when app is not running (LaunchServices starts it).
 
 #### B-04 Drop onto the Dock icon
-Status: done · Priority: P1 · Files: `App/Info.plist` `CFBundleDocumentTypes` (public.image, com.adobe.pdf, public.url, com.apple.web-internet-location), `MyMindApp.swift` (`.onOpenURL` already exists; add `NSApplicationDelegateAdaptor` `application(_:open:)`)
+Status: done · Priority: P1 · Files: `App/Info.plist` `CFBundleDocumentTypes` (public.image, com.adobe.pdf, public.url, com.apple.web-internet-location), `CardfileApp.swift` (`.onOpenURL` already exists; add `NSApplicationDelegateAdaptor` `application(_:open:)`)
 - Accept: drag a `.webloc`, a PNG, and a PDF onto the Dock icon → three items.
 
 #### B-05 Quick-capture: menu bar extra + global hotkey
-Status: todo · Priority: P1 · Files: `MyMindApp.swift` (`MenuBarExtra`), new `QuickCapturePanel.swift`, `HotkeyMonitor.swift` (Carbon `RegisterEventHotKey` or `NSEvent.addGlobalMonitorForEvents` + Input Monitoring prompt), `App/MyMind.entitlements` (`com.apple.security.automation.apple-events`), `Info.plist` (`NSAppleEventsUsageDescription`)
+Status: todo · Priority: P1 · Files: `CardfileApp.swift` (`MenuBarExtra`), new `QuickCapturePanel.swift`, `HotkeyMonitor.swift` (Carbon `RegisterEventHotKey` or `NSEvent.addGlobalMonitorForEvents` + Input Monitoring prompt), `App/Cardfile.entitlements` (`com.apple.security.automation.apple-events`), `Info.plist` (`NSAppleEventsUsageDescription`)
 - Hotkey (default ⌃⌥⌘S) opens a floating panel prefilled with the frontmost browser's URL/title via AppleScript (`tell application "Safari" to get URL of front document`; same for Google Chrome/Arc/Brave/Edge which share Chrome's suite). Fallback to clipboard URL. Panel: URL, title, shelf, tags, note, Save. Panel never steals focus for more than the save.
 - Setting toggle + hotkey recorder in a new **Capture** Settings tab. Menu bar extra shows last save status and "Open Library".
 - Accept: with Chrome frontmost, press hotkey → panel shows the Chrome tab URL → ⏎ saves → menu bar shows "Saved · <title>". Denying Apple Events permission degrades to clipboard prefill with a clear note.
@@ -192,14 +192,14 @@ Status: todo · Priority: P1 · Files: `MyMindApp.swift` (`MenuBarExtra`), new `
 #### B-06 Clipboard watcher (opt-in)
 Status: todo · Priority: P2 · Files: `LibraryModel.swift` (`NSPasteboard.general.changeCount` timer ~1 s while enabled), `LibraryShell.swift` (non-modal banner "Save copied link? ⏎"), Settings Capture tab
 - Only fires for http(s) URLs not already in the library. Banner auto-dismisses in 8 s. Never saves without a keypress/click.
-- Accept: copy a URL in any app → banner appears in My Mind → ⏎ saves; copying the same URL again does nothing.
+- Accept: copy a URL in any app → banner appears in Cardfile → ⏎ saves; copying the same URL again does nothing.
 
-#### B-07 App Intent: "Save to My Mind"
-Status: done · Priority: P2 · Files: new `Sources/MyMind/SaveIntent.swift` (`AppIntent` with `@Parameter url: URL`, optional `shelf`, `tags`, `note`; `AppShortcutsProvider`)
-- Accept: Shortcuts → "Save to My Mind" with a URL → item saved; Spotlight "Save to My Mind" appears.
+#### B-07 App Intent: "Save to Cardfile"
+Status: done · Priority: P2 · Files: new `Sources/Cardfile/SaveIntent.swift` (`AppIntent` with `@Parameter url: URL`, optional `shelf`, `tags`, `note`; `AppShortcutsProvider`)
+- Accept: Shortcuts → "Save to Cardfile" with a URL → item saved; Spotlight "Save to Cardfile" appears.
 
 #### B-08 Other browsers via URL scheme + bookmarklet surface
-Status: partial (Settings shows bookmarklets and `mymind://save`; no Chrome extension in this slice) · Priority: P2 · Files: `SettingsView.swift` (Capture tab → "Other browsers"), new `BrowserExtension/chrome/` (MV3: `manifest.json`, `background.js` with `chrome.action.onClicked` → `chrome.tabs.create({url:"mymind://save?…"})` then close the tab, `commands` shortcut, context menus)
+Status: partial (Settings shows bookmarklets and `mymind://save`; no Chrome extension in this slice) · Priority: P2 · Files: `SettingsView.swift` (Capture tab → "Other browsers"), new `BrowserExtension/chrome/` (MV3: `manifest.json`, `background.js` with `chrome.action.onClicked` → `chrome.tabs.create({url:"cardfile://save?…"})` then close the tab, `commands` shortcut, context menus)
 - Settings shows: two bookmarklets (copyable, with a "drag this to your bookmarks bar" link), and a "Load unpacked extension" folder path for Chrome/Arc/Edge/Brave. The app shows a toast + badge when a `mymind://save` arrives so the user gets confirmation somewhere.
 - Accept: Chrome bookmarklet → item saved, app toast; unpacked extension ⌘⇧S → same; duplicate → "Already in your library."
 
@@ -224,8 +224,8 @@ Status: todo · Priority: P1 · Files: `LibraryShell.header`, new `TagBrowser.sw
 - Accept: sort persists across layouts; clicking a tag filters and shows a chip.
 
 #### U-04 Keyboard model
-Status: todo · Priority: P1 · Files: `LibraryShell.swift` (`onKeyPress`), `MyMindApp.swift` commands
-- ←/→ in grids (compute columns from width via `GeometryReader`), Home/End, ⌘↩ open original, ⌘C copy link, ⌫ (no ⌘) moves to My Mind Trash with the confirm setting, ⌘Z undo last trash (add `undoLastTrash` using the trashed id), ←/→ inside preview moves to prev/next item, Space toggles preview.
+Status: todo · Priority: P1 · Files: `LibraryShell.swift` (`onKeyPress`), `CardfileApp.swift` commands
+- ←/→ in grids (compute columns from width via `GeometryReader`), Home/End, ⌘↩ open original, ⌘C copy link, ⌫ (no ⌘) moves to Cardfile Trash with the confirm setting, ⌘Z undo last trash (add `undoLastTrash` using the trashed id), ←/→ inside preview moves to prev/next item, Space toggles preview.
 - Accept: full loop with mouse unplugged: search → arrow to a card → Space → ← → Esc → ⌫ → ⌘Z.
 
 #### U-05 Preview polish
@@ -235,12 +235,12 @@ Status: todo · Priority: P2 · Files: `ItemViews.ItemPreview`
 
 #### U-06 Card hover quick actions + trash undo
 Status: todo · Priority: P2 · Files: `ItemViews.ItemCard`, `LibraryShell`, `LibraryModel`
-- On hover (`.onHover`), show favorite + open-original glyphs beside the trash icon (same 28pt style; hidden otherwise; always visible to VoiceOver). After card-trash, show a 6 s toast "Moved to My Mind Trash · Undo".
+- On hover (`.onHover`), show favorite + open-original glyphs beside the trash icon (same 28pt style; hidden otherwise; always visible to VoiceOver). After card-trash, show a 6 s toast "Moved to Cardfile Trash · Undo".
 - Accept: hover reveals; VoiceOver rotor lists all three; Undo restores the item to the same position.
 
 #### U-07 Settings → Capture tab + support matrix
 Status: todo · Priority: P1 · Files: `SettingsView.swift`
-- New tab: Safari (status detection via `SFSafariExtensionManager.getStateOfSafariExtension` — show "On / Off / Not found"), one-click toggle (B-01), Share/Services notes, hotkey recorder (B-05), clipboard watcher (B-06), other browsers (B-08). Add a read-only "What My Mind can keep" matrix: link → Bookmark; selection → Excerpt; JPEG/PNG/HEIC → Image copied; PDF → PDF copied; everything else → not yet.
+- New tab: Safari (status detection via `SFSafariExtensionManager.getStateOfSafariExtension` — show "On / Off / Not found"), one-click toggle (B-01), Share/Services notes, hotkey recorder (B-05), clipboard watcher (B-06), other browsers (B-08). Add a read-only "What Cardfile can keep" matrix: link → Bookmark; selection → Excerpt; JPEG/PNG/HEIC → Image copied; PDF → PDF copied; everything else → not yet.
 - Accept: Safari state reflects reality after toggling in Safari; matrix matches `FileSignature.sniff`.
 
 #### U-08 Accessibility floor
@@ -270,13 +270,13 @@ Status: todo · Priority: P0 for beta · Files: `scripts/make-alpha-dmg.sh`
 - `xcrun notarytool submit "$DMG" --keychain-profile mymind-notary --wait && xcrun stapler staple "$APP" && xcrun stapler staple "$DMG"`. Store credentials with `notarytool store-credentials`. Accept: `spctl --assess --type open --context context:primarySignature` → accepted; fresh Mac opens without right-click.
 
 #### R-02 Xcode project for the appex targets
-Status: todo · Priority: P1 · Generate with `xcodegen` (`project.yml`) so Safari and Share appexes embed via standard build phases; keep SwiftPM for LibraryCore. Accept: `xcodebuild -scheme MyMind archive` produces a bundle identical in layout to the scripted one.
+Status: todo · Priority: P1 · Generate with `xcodegen` (`project.yml`) so Safari and Share appexes embed via standard build phases; keep SwiftPM for LibraryCore. Accept: `xcodebuild -scheme Cardfile archive` produces a bundle identical in layout to the scripted one.
 
 #### R-03 Version lockstep + changelog
 Status: todo · Priority: P2 · Single `VERSION` file read by `make-alpha-dmg.sh`, both Info.plists, and `extension-manifest.json`; append `dist/ALPHA-NOTES.md` per build.
 
 #### R-04 End-to-end capture journey test
-Status: todo · Priority: P1 · Scripted (`scripts/e2e-capture.sh` + `MyMindTool`) on a clean `MYMIND_ROOT`: install build → quit app → simulate Safari save via handler (call `MyMindExtension` handler through a small harness or `MyMindTool save --origin safari --group`) → launch app → assert item present, receipt `saved`, fingerprints equal → export → restore into empty root → compare ids/notes/tags/hashes. This is the alpha acceptance bar from the audit.
+Status: todo · Priority: P1 · Scripted (`scripts/e2e-capture.sh` + `CardfileTool`) on a clean `MYMIND_ROOT`: install build → quit app → simulate Safari save via handler (call `CardfileExtension` handler through a small harness or `CardfileTool save --origin safari --group`) → launch app → assert item present, receipt `saved`, fingerprints equal → export → restore into empty root → compare ids/notes/tags/hashes. This is the alpha acceptance bar from the audit.
 
 ---
 

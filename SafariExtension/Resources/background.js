@@ -1,4 +1,4 @@
-const NATIVE_ID = "com.charlesbonetti.mymind.extension";
+const NATIVE_ID = "com.charlesbonetti.cardfile.extension";
 
 // Safari and Firefox expose `browser`; Chrome, Arc, Brave, and Edge expose `chrome`.
 // A distinct name is used so this never shadows a namespace the browser already defines.
@@ -25,11 +25,11 @@ async function native(payload) {
 
 function ensureMenus() {
   const create = () => {
-    ext.contextMenus.create({ id: "save-page", title: "Save page to My Mind", contexts: ["page"] });
-    ext.contextMenus.create({ id: "save-selection", title: "Save selection to My Mind", contexts: ["selection"] });
-    ext.contextMenus.create({ id: "save-link", title: "Save link to My Mind", contexts: ["link"] });
-    ext.contextMenus.create({ id: "save-image", title: "Save image to My Mind", contexts: ["image"] });
-    ext.contextMenus.create({ id: "save-image-link", title: "Save image link to My Mind", contexts: ["image"] });
+    ext.contextMenus.create({ id: "save-page", title: "Save page to Cardfile", contexts: ["page"] });
+    ext.contextMenus.create({ id: "save-selection", title: "Save selection to Cardfile", contexts: ["selection"] });
+    ext.contextMenus.create({ id: "save-link", title: "Save link to Cardfile", contexts: ["link"] });
+    ext.contextMenus.create({ id: "save-image", title: "Save image to Cardfile", contexts: ["image"] });
+    ext.contextMenus.create({ id: "save-image-link", title: "Save image link to Cardfile", contexts: ["image"] });
   };
   if (ext.contextMenus.removeAll) {
     ext.contextMenus.removeAll().then(create).catch(create);

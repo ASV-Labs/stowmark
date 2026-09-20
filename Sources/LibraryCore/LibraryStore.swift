@@ -111,7 +111,7 @@ public final class LibraryStore: @unchecked Sendable {
             throw LibraryError.migration("The browser cannot see the shared library on this Mac.")
         }
         if FileManager.default.fileExists(atPath: StorageLocator.divergedMarker(in: shared).path) {
-            throw LibraryError.migration("The Mac app and Safari libraries differ. Open My Mind to finish this save.")
+            throw LibraryError.migration("The Mac app and Safari libraries differ. Open Cardfile to finish this save.")
         }
         guard LibraryReplica.hasDatabase(at: shared) else {
             throw LibraryError.migration("The shared library is not ready yet.")
@@ -157,7 +157,7 @@ public final class LibraryStore: @unchecked Sendable {
         let root = try StorageLocator.appSupportRoot()
         let fm = FileManager.default
         let backup = root.deletingLastPathComponent()
-            .appendingPathComponent("MyMind-reset-backup-\(ISO8601DateFormatter().string(from: Date()))", isDirectory: true)
+            .appendingPathComponent("Cardfile-reset-backup-\(ISO8601DateFormatter().string(from: Date()))", isDirectory: true)
         if LibraryReplica.hasDatabase(at: root) {
             try? fm.copyItem(at: root, to: backup)
         }
@@ -198,7 +198,7 @@ public final class LibraryStore: @unchecked Sendable {
     public func attachPreview(itemID: UUID, data: Data) throws {
         try sync {
             guard data.count <= Limits.maxPreviewBytes else {
-                throw LibraryError.tooLarge("That photo is larger than My Mind can keep as a preview.")
+                throw LibraryError.tooLarge("That photo is larger than Cardfile can keep as a preview.")
             }
             guard let signature = FileSignature.sniff(data), signature == .png || signature == .jpeg else {
                 throw LibraryError.invalidFile("Preview photos need to be a JPEG or PNG.")

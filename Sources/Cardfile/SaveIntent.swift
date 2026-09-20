@@ -2,9 +2,9 @@ import AppIntents
 import Foundation
 import LibraryCore
 
-struct SaveToMyMindIntent: AppIntent {
-    static let title: LocalizedStringResource = "Save to My Mind"
-    static let description = IntentDescription("Save a web link into My Mind on this Mac.")
+struct SaveToCardfileIntent: AppIntent {
+    static let title: LocalizedStringResource = "Save to Cardfile"
+    static let description = IntentDescription("Save a web link into Cardfile on this Mac.")
     static let openAppWhenRun = true
 
     @Parameter(title: "URL")
@@ -20,7 +20,7 @@ struct SaveToMyMindIntent: AppIntent {
     var note: String?
 
     static var parameterSummary: some ParameterSummary {
-        Summary("Save \(\.$url) to My Mind") {
+        Summary("Save \(\.$url) to Cardfile") {
             \.$shelf
             \.$tags
             \.$note
@@ -52,7 +52,7 @@ struct SaveToMyMindIntent: AppIntent {
         }
         guard result.status == .saved || result.status == .alreadySaved else {
             throw NSError(
-                domain: "com.charlesbonetti.mymind",
+                domain: "com.charlesbonetti.cardfile",
                 code: 1,
                 userInfo: [NSLocalizedDescriptionKey: result.message]
             )
@@ -61,14 +61,14 @@ struct SaveToMyMindIntent: AppIntent {
     }
 }
 
-struct MyMindShortcuts: AppShortcutsProvider {
+struct CardfileShortcuts: AppShortcutsProvider {
     static var appShortcuts: [AppShortcut] {
         AppShortcut(
-            intent: SaveToMyMindIntent(),
+            intent: SaveToCardfileIntent(),
             phrases: [
                 "Save to \(.applicationName)",
             ],
-            shortTitle: "Save to My Mind",
+            shortTitle: "Save to Cardfile",
             systemImageName: "bookmark"
         )
     }

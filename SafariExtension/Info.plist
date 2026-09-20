@@ -3,21 +3,21 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleDisplayName</key>
-	<string>My Mind</string>
+	<string>Cardfile</string>
 	<key>CFBundleExecutable</key>
-	<string>MyMindExtension</string>
+	<string>CardfileExtension</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.charlesbonetti.mymind.extension</string>
+	<string>com.charlesbonetti.cardfile.extension</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>My Mind Extension</string>
+	<string>Cardfile Extension</string>
 	<key>CFBundlePackageType</key>
 	<string>XPC!</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.0.0-alpha.10</string>
+	<string>1.0.0-alpha.11</string>
 	<key>CFBundleVersion</key>
-	<string>10</string>
+	<string>11</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>15.0</string>
 	<key>NSExtension</key>

@@ -2,15 +2,15 @@
 import PackageDescription
 
 let package = Package(
-    name: "MyMind",
+    name: "Cardfile",
     platforms: [.macOS(.v15)],
     products: [
         .library(name: "LibraryCore", targets: ["LibraryCore"]),
-        .executable(name: "MyMind", targets: ["MyMind"]),
-        .executable(name: "MyMindTool", targets: ["MyMindTool"]),
-        .executable(name: "MyMindExtension", targets: ["MyMindExtension"]),
-        .executable(name: "MyMindShare", targets: ["MyMindShare"]),
-        .executable(name: "MyMindChromeHost", targets: ["MyMindChromeHost"]),
+        .executable(name: "Cardfile", targets: ["Cardfile"]),
+        .executable(name: "CardfileTool", targets: ["CardfileTool"]),
+        .executable(name: "CardfileExtension", targets: ["CardfileExtension"]),
+        .executable(name: "CardfileShare", targets: ["CardfileShare"]),
+        .executable(name: "CardfileChromeHost", targets: ["CardfileChromeHost"]),
     ],
     targets: [
         .target(
@@ -18,7 +18,7 @@ let package = Package(
             linkerSettings: [.linkedLibrary("sqlite3")]
         ),
         .executableTarget(
-            name: "MyMind",
+            name: "Cardfile",
             dependencies: ["LibraryCore"],
             linkerSettings: [
                 .linkedFramework("AppKit"),
@@ -29,11 +29,11 @@ let package = Package(
             ]
         ),
         .executableTarget(
-            name: "MyMindTool",
+            name: "CardfileTool",
             dependencies: ["LibraryCore"]
         ),
         .executableTarget(
-            name: "MyMindExtension",
+            name: "CardfileExtension",
             dependencies: ["LibraryCore"],
             swiftSettings: [.unsafeFlags(["-application-extension"])],
             linkerSettings: [
@@ -42,7 +42,7 @@ let package = Package(
             ]
         ),
         .executableTarget(
-            name: "MyMindShare",
+            name: "CardfileShare",
             dependencies: ["LibraryCore"],
             swiftSettings: [.unsafeFlags(["-application-extension"])],
             linkerSettings: [
@@ -53,7 +53,7 @@ let package = Package(
             ]
         ),
         .executableTarget(
-            name: "MyMindChromeHost",
+            name: "CardfileChromeHost",
             dependencies: ["LibraryCore"],
             linkerSettings: [.linkedFramework("AppKit")]
         ),

@@ -5,7 +5,7 @@ import Foundation
 ///
 /// Nothing here reports `saved` on its own. A save is only `saved` or `already_saved` when
 /// `LibraryStore.capture` says so. When the shared library cannot be opened, the reply is
-/// `pending` and the app is asked to finish the save through `mymind://save`.
+/// `pending` and the app is asked to finish the save through `cardfile://save`.
 public struct CaptureMessageRouter: Sendable {
     /// Recorded on each item so the library can tell Safari saves from Chrome saves.
     public let origin: String
@@ -25,8 +25,8 @@ public struct CaptureMessageRouter: Sendable {
         }
 
         if action == "openApp" {
-            open("mymind://open")
-            return ["status": "opened", "message": "Opening My Mind."]
+            open("cardfile://open")
+            return ["status": "opened", "message": "Opening Cardfile."]
         }
 
         if action == "receipt" {
@@ -66,7 +66,7 @@ public struct CaptureMessageRouter: Sendable {
             return encode(result, requestID: requestID)
         } catch {
             if action == "undo" {
-                return encode(.failed("Nothing to undo until My Mind confirms the save."), requestID: requestID)
+                return encode(.failed("Nothing to undo until Cardfile confirms the save."), requestID: requestID)
             }
             if let pageURL = message["pageURL"] as? String, !pageURL.isEmpty {
                 openSaveURL(
@@ -82,7 +82,7 @@ public struct CaptureMessageRouter: Sendable {
                 CaptureHandshake.write(pending, requestID: requestID)
                 return encode(pending, requestID: requestID)
             }
-            return encode(.failed("Not saved. Open My Mind once so the browser can share the library."), requestID: requestID)
+            return encode(.failed("Not saved. Open Cardfile once so the browser can share the library."), requestID: requestID)
         }
     }
 
@@ -146,7 +146,7 @@ public struct CaptureMessageRouter: Sendable {
         if !tags.isEmpty {
             parts.append(URLQueryItem(name: "tags", value: tags.joined(separator: ",")))
         }
-        var components = URLComponents(string: "mymind://save")
+        var components = URLComponents(string: "cardfile://save")
         components?.queryItems = parts
         if let url = components?.url {
             openURL(url)

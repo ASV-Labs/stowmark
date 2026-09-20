@@ -1,6 +1,6 @@
 const status = document.getElementById("status");
 const undo = document.getElementById("undo");
-const NATIVE_ID = "com.charlesbonetti.mymind.extension";
+const NATIVE_ID = "com.charlesbonetti.cardfile.extension";
 let lastRequestId = null;
 
 // Safari and Firefox expose `browser`; Chrome, Arc, Brave, and Edge expose `chrome`.
@@ -62,14 +62,14 @@ async function send(action, extras = {}) {
     let response = await sendNative(payload);
     if (response?.requestId) lastRequestId = response.requestId;
     if (response?.status === "pending") {
-      status.textContent = response.message || "Waiting for My Mind to finish saving.";
+      status.textContent = response.message || "Waiting for Cardfile to finish saving.";
       response = await waitForReceipt(lastRequestId);
     }
     status.textContent = response?.message ?? "Not saved.";
     undo.hidden = response?.status !== "saved";
     return response;
   } catch (error) {
-    status.textContent = "Not saved. Open My Mind once, then try again.";
+    status.textContent = "Not saved. Open Cardfile once, then try again.";
     return { status: "failed" };
   }
 }
@@ -85,14 +85,14 @@ async function waitForReceipt(requestId) {
       if (response?.status === "saved" || response?.status === "already_saved" || response?.status === "failed") {
         return response;
       }
-      status.textContent = response?.message || "Waiting for My Mind to finish saving.";
+      status.textContent = response?.message || "Waiting for Cardfile to finish saving.";
     } catch {
-      status.textContent = "Waiting for My Mind to finish saving.";
+      status.textContent = "Waiting for Cardfile to finish saving.";
     }
   }
   return {
     status: "pending",
-    message: "My Mind is still saving. Open the library to confirm — this window did not get a receipt.",
+    message: "Cardfile is still saving. Open the library to confirm — this window did not get a receipt.",
   };
 }
 
@@ -122,6 +122,6 @@ document.getElementById("undo").addEventListener("click", async () => {
 });
 document.getElementById("open").addEventListener("click", () => {
   sendNative({ action: "openApp" }).catch(() => {
-    status.textContent = "Could not reach My Mind.";
+    status.textContent = "Could not reach Cardfile.";
   });
 });

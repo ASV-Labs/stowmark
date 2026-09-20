@@ -26,7 +26,7 @@ final class ShareViewController: NSViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        title = "Save to My Mind"
+        title = "Save to Cardfile"
     }
 
     override func viewDidAppear() {
@@ -94,7 +94,7 @@ final class ShareViewController: NSViewController {
         let fields = handoffFields()
         let tags = ShareText.tags(model.tags)
         var components = URLComponents()
-        components.scheme = "mymind"
+        components.scheme = "cardfile"
         components.host = "save"
         components.queryItems = [
             URLQueryItem(name: "url", value: fields.url),
@@ -111,7 +111,7 @@ final class ShareViewController: NSViewController {
             openHost(url)
         }
         model.phase = .handingOff
-        model.statusText = "Opening My Mind to finish…"
+        model.statusText = "Opening Cardfile to finish…"
         scheduleDismiss()
     }
 
@@ -220,7 +220,7 @@ struct ShareForm: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Save to My Mind")
+            Text("Save to Cardfile")
                 .font(.headline)
             if !model.detail.isEmpty {
                 Text(model.detail)
@@ -564,7 +564,7 @@ enum ShareIntake {
         }
         var notes: [String] = []
         if skippedUnsupported > 0 {
-            notes.append("Skipped \(skippedUnsupported) file\(skippedUnsupported == 1 ? "" : "s") My Mind cannot copy.")
+            notes.append("Skipped \(skippedUnsupported) file\(skippedUnsupported == 1 ? "" : "s") Cardfile cannot copy.")
         }
         if skippedTooLarge > 0 {
             notes.append("Skipped \(skippedTooLarge) file\(skippedTooLarge == 1 ? "" : "s") over 100 MB.")
@@ -578,7 +578,7 @@ enum ShareIntake {
             return "Not saved. That file is over the 100 MB limit."
         }
         if collected.skippedUnsupported > 0 {
-            return "Not saved. My Mind can copy JPEG, PNG, HEIC, and PDF files."
+            return "Not saved. Cardfile can copy JPEG, PNG, HEIC, and PDF files."
         }
         return "Not saved. Nothing was shared."
     }

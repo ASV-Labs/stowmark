@@ -369,7 +369,7 @@ public enum LibraryError: Error, LocalizedError, CustomStringConvertible, Equata
         case .notFound: "That item is no longer in the library."
         case .archive(let detail): detail
         case .libraryNotEmpty: "This library already has items. Restore only replaces it when you confirm that choice."
-        case .unsupportedSchema: "This archive was written by a newer version of My Mind."
+        case .unsupportedSchema: "This archive was written by a newer version of Cardfile."
         case .migration(let detail): detail
         }
     }
@@ -386,20 +386,47 @@ public enum Limits {
 }
 
 public enum StorageLocator {
-    public static let appGroupID = "group.com.charlesbonetti.mymind"
+    public static let appGroupID = "group.com.charlesbonetti.cardfile"
+    /// Legacy group from the My Mind alpha — kept entitled so first launch can migrate.
+    public static let legacyAppGroupID = "group.com.charlesbonetti.mymind"
 
     /// Sandboxed Application Support — primary library home for the Mac app.
     public static func appSupportRoot() throws -> URL {
-        let fallback = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("MyMind", isDirectory: true)
-        try FileManager.default.createDirectory(at: fallback, withIntermediateDirectories: true)
-        return fallback
+        let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        let root = support.appendingPathComponent("Cardfile", isDirectory: true)
+        let legacy = support.appendingPathComponent("MyMind", isDirectory: true)
+        let fm = FileManager.default
+        if !LibraryReplica.hasDatabase(at: root), LibraryReplica.hasDatabase(at: legacy) {
+            try? fm.createDirectory(at: root.deletingLastPathComponent(), withIntermediateDirectories: true)
+            if fm.fileExists(atPath: root.path) {
+                try? fm.removeItem(at: root)
+            }
+            try? fm.moveItem(at: legacy, to: root)
+        }
+        try fm.createDirectory(at: root, withIntermediateDirectories: true)
+        migrateLegacySharedContainerIfNeeded(into: root)
+        return root
     }
 
-    /// Shared container for a future Safari extension. May be unavailable under Developer ID
+    /// Shared container for Safari / Share / Chrome host. May be unavailable under Developer ID
     /// until the App Group is fully provisioned — never require it to launch.
     public static func sharedRoot() -> URL? {
         FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupID)
+    }
+
+    public static func legacySharedRoot() -> URL? {
+        FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: legacyAppGroupID)
+    }
+
+    /// One-shot: if Cardfile's group is empty but the old My Mind group has a library, copy it.
+    private static func migrateLegacySharedContainerIfNeeded(into appSupport: URL) {
+        guard let legacy = legacySharedRoot(), LibraryReplica.hasDatabase(at: legacy) else { return }
+        if let shared = sharedRoot(), !LibraryReplica.hasDatabase(at: shared) {
+            try? LibraryReplica.replicate(from: legacy, to: shared)
+        }
+        if !LibraryReplica.hasDatabase(at: appSupport), LibraryReplica.hasDatabase(at: legacy) {
+            try? LibraryReplica.replicate(from: legacy, to: appSupport)
+        }
     }
 
     public static func appRoot() throws -> URL {
@@ -407,7 +434,7 @@ public enum StorageLocator {
     }
 
     public static func isWritableDirectory(_ url: URL) -> Bool {
-        let probe = url.appendingPathComponent(".mymind-write-probe-\(UUID().uuidString)")
+        let probe = url.appendingPathComponent(".cardfile-write-probe-\(UUID().uuidString)")
         do {
             try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
             try Data("ok".utf8).write(to: probe, options: .atomic)
@@ -424,7 +451,7 @@ public enum StorageLocator {
     }
 
     public static func divergedMarker(in root: URL) -> URL {
-        root.appendingPathComponent(".mymind-diverged")
+        root.appendingPathComponent(".cardfile-diverged")
     }
 
     public static func handoffDirectory(in root: URL) -> URL {
@@ -470,7 +497,7 @@ public enum LibraryReplica {
         }
 
         let staging = destination.deletingLastPathComponent()
-            .appendingPathComponent("mymind-replica-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("cardfile-replica-\(UUID().uuidString)", isDirectory: true)
         try fm.createDirectory(at: staging, withIntermediateDirectories: true)
         var backupRoot: URL?
         do {
@@ -488,7 +515,7 @@ public enum LibraryReplica {
             try fm.createDirectory(at: destination, withIntermediateDirectories: true)
             if hasDatabase(at: destination) || fm.fileExists(atPath: destination.appendingPathComponent("assets").path) {
                 let stamped = destination.deletingLastPathComponent()
-                    .appendingPathComponent("MyMind-backup-\(ISO8601DateFormatter().string(from: Date()))", isDirectory: true)
+                    .appendingPathComponent("Cardfile-backup-\(ISO8601DateFormatter().string(from: Date()))", isDirectory: true)
                 try fm.copyItem(at: destination, to: stamped)
                 backupRoot = stamped
             }
@@ -595,7 +622,7 @@ public enum CaptureHandshake {
         return nil
     }
 
-    public static func pending(requestID: UUID, message: String = "Waiting for My Mind to finish saving.") -> CaptureResult {
+    public static func pending(requestID: UUID, message: String = "Waiting for Cardfile to finish saving.") -> CaptureResult {
         CaptureResult(status: .pending, itemID: nil, retention: nil, warnings: [], message: message)
     }
 

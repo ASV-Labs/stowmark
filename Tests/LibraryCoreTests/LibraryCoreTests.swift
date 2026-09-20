@@ -56,7 +56,7 @@ final class LibraryCoreTests: XCTestCase {
         XCTAssertEqual(parsed.fragment, "top")
         XCTAssertTrue(parsed.query?.contains("id=1") == true)
 
-        let archive = root.appendingPathComponent("library.mymind")
+        let archive = root.appendingPathComponent("library.cardfile")
         let summary = try again.exportArchive(to: archive)
         XCTAssertEqual(summary.itemCount, 1)
         let restoredRoot = root.appendingPathComponent("restored", isDirectory: true)
@@ -208,7 +208,7 @@ final class LibraryCoreTests: XCTestCase {
     func testRestoreRefusesNonEmptyLibrary() throws {
         let store = try makeStore()
         _ = try store.capture(CaptureRequest(captureKind: .link, targetURL: "https://example.com/a", capturedTitle: "Alpha", origin: "test"))
-        let archive = root.appendingPathComponent("one.mymind")
+        let archive = root.appendingPathComponent("one.cardfile")
         _ = try store.exportArchive(to: archive)
         _ = try store.capture(CaptureRequest(captureKind: .link, targetURL: "https://example.com/b", capturedTitle: "Beta", origin: "test"))
         XCTAssertThrowsError(try store.restoreArchive(from: archive, mode: .requireEmpty)) { error in

@@ -3,7 +3,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 source "$ROOT/scripts/version.sh"
 OUT="$ROOT/dist/chrome-extension"
-ZIP="$ROOT/dist/mymind-chrome-$VERSION.zip"
+ZIP="$ROOT/dist/cardfile-chrome-$VERSION.zip"
 
 # The scripts, popup, icons, and locales are shared with the Safari extension. Only the manifest
 # differs, because Chrome needs a service worker and Safari needs a background script.
@@ -29,4 +29,4 @@ echo "Web Store upload: $ZIP"
 echo
 echo "To load it now: Chrome → Extensions → Developer mode → Load unpacked → $OUT"
 echo "To publish: upload the zip at https://chrome.google.com/webstore/devconsole"
-echo "After publishing, paste the assigned ID into My Mind → Settings → Capture."
+echo "After publishing, paste the assigned ID into Cardfile → Settings → Capture."

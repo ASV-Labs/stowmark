@@ -27,7 +27,7 @@ struct LibraryShell: View {
     @FocusState private var shelfNameFocused: Bool
 
     private static let sidebarCollapsedKey = "librarySidebarCollapsed"
-    private static let itemDragType = UTType(exportedAs: "com.charlesbonetti.mymind.saved-item")
+    private static let itemDragType = UTType(exportedAs: "com.charlesbonetti.cardfile.saved-item")
     private static let headerSorts: [HeaderSort] = [
         HeaderSort(order: .recent, title: "Recent"),
         HeaderSort(order: .title, title: "Title"),
@@ -79,7 +79,7 @@ struct LibraryShell: View {
                 model.addTagFilter(label)
             }
         }
-        .onReceive(NotificationCenter.default.publisher(for: .openMyMindSettings)) { _ in
+        .onReceive(NotificationCenter.default.publisher(for: .openCardfileSettings)) { _ in
             NSApp.activate(ignoringOtherApps: true)
             openSettings()
         }
@@ -183,7 +183,7 @@ struct LibraryShell: View {
 
     private var sidebar: some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text("My Mind")
+            Text("Cardfile")
                 .font(.title2)
                 .foregroundStyle(Theme.ink(scheme))
                 .padding(.horizontal, 20)
@@ -840,7 +840,7 @@ struct LibraryShell: View {
             Text(model.startupError ?? "Unknown problem")
                 .font(.body)
                 .textSelection(.enabled)
-            Text("You can start a new empty library on this Mac. If you already exported a .mymind archive, restore it afterwards from Settings.")
+            Text("You can start a new empty library on this Mac. If you already exported a .cardfile or .mymind archive, restore it afterwards from Settings.")
                 .font(.body)
                 .foregroundStyle(Theme.secondary(scheme))
             HStack(spacing: 12) {
@@ -912,7 +912,7 @@ struct LibraryShell: View {
             } else {
                 Button(item.favorite ? "Unfavorite" : "Favorite") { model.toggleFavorite(item.id) }
                 Button("Filter by \(item.sourceLabel)") { model.filterDomain(item.sourceDomain ?? item.sourceLabel) }
-                Button("Move to My Mind Trash") { model.select(item.id); model.trashSelected() }
+                Button("Move to Cardfile Trash") { model.select(item.id); model.trashSelected() }
             }
         }
     }

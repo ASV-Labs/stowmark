@@ -5,19 +5,19 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleExecutable</key>
-	<string>MyMindTool</string>
+	<string>CardfileTool</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.charlesbonetti.mymind.tool</string>
+	<string>com.charlesbonetti.cardfile.tool</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>My Mind Tool</string>
+	<string>Cardfile Tool</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.0.0-alpha.10</string>
+	<string>1.0.0-alpha.11</string>
 	<key>CFBundleVersion</key>
-	<string>10</string>
+	<string>11</string>
 	<key>LSBackgroundOnly</key>
 	<true/>
 	<key>LSMinimumSystemVersion</key>

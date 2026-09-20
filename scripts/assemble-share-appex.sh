@@ -5,13 +5,13 @@ source "$ROOT/scripts/version.sh"
 APP="${1:?app bundle path}"
 IDENTITY="${CODE_SIGN_IDENTITY:-Developer ID Application: CHARLES B BONETTI (6KZQK3A2B3)}"
 
-swift build -c release --product MyMindShare --package-path "$ROOT"
+swift build -c release --product CardfileShare --package-path "$ROOT"
 
-APEX="$APP/Contents/PlugIns/MyMindShare.appex"
+APEX="$APP/Contents/PlugIns/CardfileShare.appex"
 rm -rf "$APEX"
 mkdir -p "$APEX/Contents/MacOS" "$APEX/Contents/Resources"
 
-cp "$ROOT/.build/release/MyMindShare" "$APEX/Contents/MacOS/MyMindShare"
+cp "$ROOT/.build/release/CardfileShare" "$APEX/Contents/MacOS/CardfileShare"
 cp "$ROOT/ShareExtension/Info.plist" "$APEX/Contents/Info.plist"
 stamp_plist "$APEX/Contents/Info.plist"
 
@@ -19,12 +19,12 @@ stamp_plist "$APEX/Contents/Info.plist"
 if command -v codesign >/dev/null 2>&1; then
   if command -v security >/dev/null 2>&1 && security find-identity -v -p codesigning 2>/dev/null | grep -F "$IDENTITY" >/dev/null; then
     codesign --force --options runtime --timestamp \
-      --entitlements "$ROOT/ShareExtension/MyMindShare.entitlements" \
+      --entitlements "$ROOT/ShareExtension/CardfileShare.entitlements" \
       --sign "$IDENTITY" "$APEX"
   else
     echo "warning: signing identity not found; ad-hoc signing $APEX"
     codesign --force \
-      --entitlements "$ROOT/ShareExtension/MyMindShare.entitlements" \
+      --entitlements "$ROOT/ShareExtension/CardfileShare.entitlements" \
       --sign - "$APEX"
   fi
 else

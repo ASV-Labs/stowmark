@@ -161,7 +161,7 @@ extension LibraryStore {
             return .failed("Not saved. That file is over the 100 MB limit.")
         }
         guard let signature = FileSignature.sniff(file.bytes) else {
-            return .failed("Not saved. My Mind can copy JPEG, PNG, HEIC, and PDF files.")
+            return .failed("Not saved. Cardfile can copy JPEG, PNG, HEIC, and PDF files.")
         }
         let staged = try stage(data: file.bytes, folder: "assets/originals")
         let id = uid()
@@ -450,7 +450,7 @@ extension LibraryStore {
         case .alreadySaved: message = "Already in your library."
         case .undone: message = "That save was undone."
         case .failed: message = "Not saved, retry needed."
-        case .pending: message = "Waiting for My Mind to finish saving."
+        case .pending: message = "Waiting for Cardfile to finish saving."
         }
         return CaptureResult(status: status, itemID: itemID, retention: retention, warnings: [], message: message)
     }

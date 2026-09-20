@@ -4,16 +4,15 @@
 <dict>
 	<key>com.apple.security.app-sandbox</key>
 	<true/>
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>group.com.charlesbonetti.cardfile</string>
+		<string>group.com.charlesbonetti.mymind</string>
+	</array>
 	<key>com.apple.security.files.user-selected.read-write</key>
 	<true/>
 	<key>com.apple.security.network.client</key>
 	<true/>
-	<key>com.apple.security.application-groups</key>
-	<array>
-		<string>group.com.charlesbonetti.mymind</string>
-	</array>
-	<!-- Chromium browsers only read native messaging hosts from their own support folder, so
-	     installing Chrome capture means writing one JSON file into each of these. -->
 	<key>com.apple.security.temporary-exception.files.home-relative-path.read-write</key>
 	<array>
 		<string>/Library/Application Support/Google/Chrome/NativeMessagingHosts/</string>

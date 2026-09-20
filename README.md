@@ -1,14 +1,16 @@
-# My Mind
+# Cardfile
 
 Local-first Mac visual library for links, images, excerpts, and PDFs.
 
-Public alpha **1.0.0-alpha.10**. Proprietary evaluation license — see [`LICENSE`](LICENSE). Not App Store, not notarized: first launch is right-click → Open.
+Formerly developed as “My Mind.” Rebranded to avoid collision with [mymind.com](https://mymind.com). Same product: your library stays on your Mac, with honest retention labels for what was actually kept.
+
+Public alpha **1.0.0-alpha.11**. Proprietary evaluation license — see [`LICENSE`](LICENSE). Not App Store, not notarized: first launch is right-click → Open.
 
 ## Install
 
-Download the DMG from the [latest GitHub release](https://github.com/P0GL0L/my-mind/releases/latest), drag **My Mind** into Applications, then right-click → Open.
+Download the DMG from the [latest GitHub release](https://github.com/P0GL0L/my-mind/releases/latest), drag **Cardfile** into Applications, then right-click → Open.
 
-- Paste a link into the capture bar, or use Safari / Share / Services / Dock / Shortcuts / Chrome
+- Paste a link into the capture bar, or use Safari / Share / Services / Dock / Shortcuts / Chrome / the menu bar icon
 - Search with Command-F
 - Layout switcher: Cards, Rows & Columns, Covers
 - Gear → Settings (Appearance, Capture, library export/restore)
@@ -18,7 +20,7 @@ Download the DMG from the [latest GitHub release](https://github.com/P0GL0L/my-m
 ```bash
 swift test --filter 'LibraryCoreTests|PressureTests'
 ./scripts/make-alpha-dmg.sh
-open dist/MyMind-$(cat VERSION).dmg
+open dist/Cardfile-$(cat VERSION).dmg
 ```
 
 Version is the single line in `VERSION`. Packaging stamps every nested bundle before signing.

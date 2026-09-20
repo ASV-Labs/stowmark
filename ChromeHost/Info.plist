@@ -5,19 +5,19 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleExecutable</key>
-	<string>MyMindChromeHost</string>
+	<string>CardfileChromeHost</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.charlesbonetti.mymind.chromehost</string>
+	<string>com.charlesbonetti.cardfile.chromehost</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>My Mind Chrome Host</string>
+	<string>Cardfile Chrome Host</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.0.0-alpha.10</string>
+	<string>1.0.0-alpha.11</string>
 	<key>CFBundleVersion</key>
-	<string>10</string>
+	<string>11</string>
 	<key>LSBackgroundOnly</key>
 	<true/>
 	<key>LSMinimumSystemVersion</key>
