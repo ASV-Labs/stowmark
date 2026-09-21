@@ -121,7 +121,7 @@ SHA-256: \`$SHA\`
 - On-disk article archive + quiet reader when extractable
 - On-device color tags + OCR text suggestions for images
 - Thumbnail cache, drop of links/images/PDFs, closed-app Safari absorb
-- Continuity: migrates Cardfile / My Mind Application Support + App Groups; accepts \`stowmark://\`, \`cardfile://\`, \`mymind://\`; restores \`.stowmark\`, \`.cardfile\`, \`.mymind\`
+- Continuity: migrates libraries from earlier builds on this Mac
 
 ## Known limits
 

@@ -101,12 +101,12 @@ The walkthrough film is being cut. `site/assets/demo.mp4` plus `site/assets/demo
 ```text
 Distribution preview
 Route ID: stowmark-landing
-Canonical URL: https://p0gl0l.github.io/my-mind/
+Canonical URL: https://asv-labs.github.io/stowmark/
 Preview title: Stowmark — local visual library for Mac
 Preview description: Public alpha 1.0.0-alpha.13. Save a link or a file. It stays on this Mac. No account.
 Site/product name: Stowmark
 Preview image path: site/assets/og-stowmark-1.0.0-alpha.13.png
-Preview image public absolute URL: https://p0gl0l.github.io/my-mind/assets/og-stowmark-1.0.0-alpha.13.png
+Preview image public absolute URL: https://asv-labs.github.io/stowmark/assets/og-stowmark-1.0.0-alpha.13.png
 Preview image alt text: Stowmark wordmark and app icon on ruled paper, labeled public alpha 1.0.0-alpha.13, local visual library for Mac.
 Preview image provenance: none
 Route-specific or host fallback: route-specific

@@ -231,7 +231,7 @@ struct SettingsView: View {
                 Text("Paste a link into the capture bar, drop a file, use ⇧⌘V / the menu bar icon, Share to Stowmark, or Services → Save to Stowmark.")
                     .font(.callout)
                     .foregroundStyle(Theme.secondary(scheme))
-                Text("stowmark://save works from a bookmarklet (cardfile:// and mymind:// still accepted).")
+                Text("stowmark://save works from a bookmarklet.")
                     .font(.caption)
                     .foregroundStyle(Theme.secondary(scheme))
             }

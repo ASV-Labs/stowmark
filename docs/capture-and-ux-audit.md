@@ -18,13 +18,13 @@ This file has two parts. **Part A** is the audit (what exists, what is partial, 
 | Drop **web link** on window | **Broken** | Same drop path treats an `https://` URL as a file: `importFile` runs `Data(contentsOf:)` synchronously (blocks UI, downloads HTML), then fails with "can copy JPEG, PNG, HEIC, and PDF". Dragging a link from Safari's address bar or a page therefore fails. `LibraryModel.importFile` L515. |
 | Drop **image from a web page** | Missing | Browsers offer image data + source URL; only `URL.self` is accepted, so nothing lands. |
 | Drop **text selection** | Missing | No `String` / rich-text drop → excerpt. |
-| Drop on **Dock icon** | Missing | `CFBundleDocumentTypes` only declares `.mymind`; Finder won't allow dropping images/PDFs/URLs onto the icon. |
+| Drop on **Dock icon** | Missing | `CFBundleDocumentTypes` only declares `.stowmark`; Finder won't allow dropping images/PDFs/URLs onto the icon. |
 | Import bookmarks HTML | Shipped | Plan → sheet → commit, with shelves from folders. |
 | Safari toolbar popup | Shipped (alpha.9) | Explicit Save Page / Save selection; pending → receipt polling; Undo; View in Library. |
 | Safari context menus | Shipped | Page, selection, link, "Save image link" (bookmark of the image URL, not bytes). |
 | Safari keyboard shortcut | Missing | No `commands` block in `extension-manifest.json`. |
 | Safari toolbar badge/feedback | Missing | No `action.setBadgeText`; the only feedback is inside the popup. |
-| `mymind://save?…` URL scheme | Shipped | `handleIncomingURL` accepts url/title/text/note/shelf/tags/requestId. Works from any browser via bookmarklet. |
+| `stowmark://save?…` URL scheme | Shipped | `handleIncomingURL` accepts url/title/text/note/shelf/tags/requestId. Works from any browser via bookmarklet. |
 | Bookmarklets | Dead code | `safariPageBookmarklet` / `safariExcerptBookmarklet` in `LibraryModel` are never shown in the UI. |
 | Chrome / Arc / Edge / Brave / Firefox | Missing | Blueprint gates it. No extension, no native-messaging host, no loopback server. |
 | macOS **Share** extension | Missing | Blueprint lists Share menu as a first-class entry. Would cover every browser plus Preview, Photos, Mail, Notes, Finder. |
@@ -38,7 +38,7 @@ This file has two parts. **Part A** is the audit (what exists, what is partial, 
 
 **Safari**
 - The appex is embedded, signed, and registered (`pluginkit` lists `com.charlesbonetti.stowmark.extension 1.0.0`). `/Applications/Stowmark.app` is bundle 9 with the appex.
-- Storage: app writes Application Support; a verified SQLite snapshot is replicated to the App Group container; the extension reads/writes the group copy only when fingerprints match. Diverged copies set a marker and the extension hands off via `mymind://` and returns `pending` until a receipt exists. This is honest but the **replica can lag** (only replicated at app launch), so a Safari save while the app is closed lands in the group copy and the app must re-sync on next launch. Verify `openLive` handles "group has newer items than support" — today it only copies support→group when group is empty, and group→support when support is missing. **A save made in Safari with the app closed may be stranded in the group container after the next app launch if support already has items.** This is the biggest remaining correctness risk in browser capture.
+- Storage: app writes Application Support; a verified SQLite snapshot is replicated to the App Group container; the extension reads/writes the group copy only when fingerprints match. Diverged copies set a marker and the extension hands off via `stowmark://` and returns `pending` until a receipt exists. This is honest but the **replica can lag** (only replicated at app launch), so a Safari save while the app is closed lands in the group copy and the app must re-sync on next launch. Verify `openLive` handles "group has newer items than support" — today it only copies support→group when group is empty, and group→support when support is missing. **A save made in Safari with the app closed may be stranded in the group container after the next app launch if support already has items.** This is the biggest remaining correctness risk in browser capture.
 - Popup UX: fields for shelf/note/tags are always visible; no shelf picker (free text); no tag suggestions; no keyboard shortcut; no "auto-save on click" option; no image bytes.
 - Not notarized (`spctl`: "Unnotarized Developer ID"). Users must right-click → Open.
 - Extension version string is `1.0.0` while the app is `1.0.0 (9)`; keep them in step.
@@ -46,7 +46,7 @@ This file has two parts. **Part A** is the audit (what exists, what is partial, 
 **Everything else (Chrome, Arc, Edge, Brave, Firefox, Orion)**
 - Nothing. Copy/paste or a bookmarklet that nobody can find.
 - Native messaging (Chrome's equivalent of Safari's handler) needs a host manifest written into `~/Library/Application Support/Google/Chrome/NativeMessagingHosts/`, which a sandboxed App Store app cannot write. Two viable transports:
-  1. **URL scheme** — extension opens `mymind://save?…`. Zero server, sandbox-safe, App Store-safe. Downside: the extension cannot get a receipt back; the app must show the confirmation instead (toast + badge), and Chrome shows a one-time "Open Stowmark?" prompt.
+  1. **URL scheme** — extension opens `stowmark://save?…`. Zero server, sandbox-safe, App Store-safe. Downside: the extension cannot get a receipt back; the app must show the confirmation instead (toast + badge), and Chrome shows a one-time "Open Stowmark?" prompt.
   2. **Loopback HTTP** — app listens on `127.0.0.1:<random>` with a per-install token written to a file the extension user pastes once (or discovered via URL scheme handshake). Needs `com.apple.security.network.server` (App Store allowed). Gives real receipts. More code, more attack surface.
 - Recommendation: ship (1) first behind a "Other browsers" section in Settings with install instructions and the bookmarklet as a fallback; evaluate (2) only if users demand in-extension confirmation.
 
@@ -171,7 +171,7 @@ Status: done · Priority: P0 · Files: `SafariExtension/Resources/extension-mani
 #### B-02 macOS Share extension
 Status: todo · Priority: P0 · Files: new target `Sources/StowmarkShare/ShareViewController.swift`, `ShareExtension/Info.plist` (`com.apple.share-services`, `NSExtensionActivationRule` for `NSExtensionActivationSupportsWebURLWithMaxCount=1`, `…ImageWithMaxCount=10`, `…FileWithMaxCount=10`, `…Text=true`), `ShareExtension/StowmarkShare.entitlements` (App Group), `Package.swift` (new executableTarget with `-application-extension`), `scripts/assemble-share-appex.sh`, `make-alpha-dmg.sh`
 - UI: compact SwiftUI sheet — title (editable), shelf picker (from group DB), tags, note, **Save** (default) / Cancel. Show retention line before saving ("Bookmark" / "Image will be copied").
-- Save through `LibraryStore.openForExtension()`; if unavailable, hand off via `mymind://save` with `requestId` and show "Opening Stowmark to finish…" (never "Saved").
+- Save through `LibraryStore.openForExtension()`; if unavailable, hand off via `stowmark://save` with `requestId` and show "Opening Stowmark to finish…" (never "Saved").
 - Accept: Share from Safari, Chrome, Preview (image), Finder (PDF), and Notes (text) → correct kind and retention each time, with app closed; duplicate share → "Already in your library."
 
 #### B-03 Services menu: "Save to Stowmark"
@@ -199,12 +199,12 @@ Status: done · Priority: P2 · Files: new `Sources/Stowmark/SaveIntent.swift` (
 - Accept: Shortcuts → "Save to Stowmark" with a URL → item saved; Spotlight "Save to Stowmark" appears.
 
 #### B-08 Other browsers via URL scheme + bookmarklet surface
-Status: partial (Settings shows bookmarklets and `mymind://save`; no Chrome extension in this slice) · Priority: P2 · Files: `SettingsView.swift` (Capture tab → "Other browsers"), new `BrowserExtension/chrome/` (MV3: `manifest.json`, `background.js` with `chrome.action.onClicked` → `chrome.tabs.create({url:"stowmark://save?…"})` then close the tab, `commands` shortcut, context menus)
-- Settings shows: two bookmarklets (copyable, with a "drag this to your bookmarks bar" link), and a "Load unpacked extension" folder path for Chrome/Arc/Edge/Brave. The app shows a toast + badge when a `mymind://save` arrives so the user gets confirmation somewhere.
+Status: partial (Settings shows bookmarklets and `stowmark://save`; no Chrome extension in this slice) · Priority: P2 · Files: `SettingsView.swift` (Capture tab → "Other browsers"), new `BrowserExtension/chrome/` (MV3: `manifest.json`, `background.js` with `chrome.action.onClicked` → `chrome.tabs.create({url:"stowmark://save?…"})` then close the tab, `commands` shortcut, context menus)
+- Settings shows: two bookmarklets (copyable, with a "drag this to your bookmarks bar" link), and a "Load unpacked extension" folder path for Chrome/Arc/Edge/Brave. The app shows a toast + badge when a `stowmark://save` arrives so the user gets confirmation somewhere.
 - Accept: Chrome bookmarklet → item saved, app toast; unpacked extension ⌘⇧S → same; duplicate → "Already in your library."
 
 #### B-09 (Later) Loopback receipt channel for non-Safari extensions
-Status: parked · Priority: P3 · Only if B-08 users need in-extension confirmation. `Network.framework` listener on 127.0.0.1, random port + token in `~/Library/Group Containers/.../loopback.json`, `com.apple.security.network.server`. Extension reads token via a one-time `mymind://pair` round-trip that opens the extension's options page with the token in the fragment.
+Status: parked · Priority: P3 · Only if B-08 users need in-extension confirmation. `Network.framework` listener on 127.0.0.1, random port + token in `~/Library/Group Containers/.../loopback.json`, `com.apple.security.network.server`. Extension reads token via a one-time `stowmark://pair` round-trip that opens the extension's options page with the token in the fragment.
 
 ### Phase 2 — UX / UI
 
@@ -267,7 +267,7 @@ Status: todo · Priority: P3 · Files: `Models.ContentKind`, `Classification.swi
 
 #### R-01 Notarize the DMG
 Status: todo · Priority: P0 for beta · Files: `scripts/make-alpha-dmg.sh`
-- `xcrun notarytool submit "$DMG" --keychain-profile mymind-notary --wait && xcrun stapler staple "$APP" && xcrun stapler staple "$DMG"`. Store credentials with `notarytool store-credentials`. Accept: `spctl --assess --type open --context context:primarySignature` → accepted; fresh Mac opens without right-click.
+- `xcrun notarytool submit "$DMG" --keychain-profile stowmark-notary --wait && xcrun stapler staple "$APP" && xcrun stapler staple "$DMG"`. Store credentials with `notarytool store-credentials`. Accept: `spctl --assess --type open --context context:primarySignature` → accepted; fresh Mac opens without right-click.
 
 #### R-02 Xcode project for the appex targets
 Status: todo · Priority: P1 · Generate with `xcodegen` (`project.yml`) so Safari and Share appexes embed via standard build phases; keep SwiftPM for LibraryCore. Accept: `xcodebuild -scheme Stowmark archive` produces a bundle identical in layout to the scripted one.

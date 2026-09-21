@@ -54,7 +54,7 @@ enum OpenedFileRouter {
         }
     }
 
-    /// `handleIncomingURL` accepts `stowmark://` (and legacy `cardfile://` / `mymind://`).
+    /// Incoming save URLs. Schemes from earlier builds still route here.
     /// Wrap a web address so Dock links use that path and never `Data(contentsOf:)` on a remote URL.
     private static func saveURL(for web: URL) -> URL? {
         var components = URLComponents()

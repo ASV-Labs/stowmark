@@ -1,10 +1,10 @@
 {
   "routeId": "stowmark-landing",
-  "canonicalUrl": "https://p0gl0l.github.io/my-mind/",
+  "canonicalUrl": "https://asv-labs.github.io/stowmark/",
   "siteName": "Stowmark",
   "title": "Stowmark — local visual library for Mac",
   "description": "Public alpha 1.0.0-alpha.13. Save a link or a file. It stays on this Mac. No account.",
-  "imageUrl": "https://p0gl0l.github.io/my-mind/assets/og-stowmark-1.0.0-alpha.13.png",
+  "imageUrl": "https://asv-labs.github.io/stowmark/assets/og-stowmark-1.0.0-alpha.13.png",
   "imageMime": "image/png",
   "imageWidth": 1200,
   "imageHeight": 630,

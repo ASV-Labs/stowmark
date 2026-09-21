@@ -3,7 +3,7 @@ name: Deploy landing
 on:
   push:
     branches:
-      - cursor/visual-library-app
+      - main
     paths:
       - "site/**"
       - ".github/workflows/pages.yml"

@@ -5,7 +5,7 @@ final class LibraryCoreTests: XCTestCase {
     private var root: URL!
 
     override func setUpWithError() throws {
-        root = FileManager.default.temporaryDirectory.appendingPathComponent("mymind-test-\(UUID().uuidString)", isDirectory: true)
+        root = FileManager.default.temporaryDirectory.appendingPathComponent("stowmark-test-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
     }
 

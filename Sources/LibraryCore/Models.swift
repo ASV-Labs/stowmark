@@ -402,8 +402,8 @@ public enum StorageLocator {
     public static let appGroupID = "group.com.charlesbonetti.stowmark"
     /// Brief Cardfile alpha — kept entitled so first launch can migrate.
     public static let cardfileAppGroupID = "group.com.charlesbonetti.cardfile"
-    /// Original My Mind alpha — kept entitled so first launch can migrate.
-    public static let mymindAppGroupID = "group.com.charlesbonetti.mymind"
+    /// First-alpha app group — kept entitled so first launch can migrate.
+    public static let legacyAppGroupID = "group.com.charlesbonetti.mymind"
 
     /// Sandboxed Application Support — primary library home for the Mac app.
     /// Migrates without deleting the source until the copy is verified present.
@@ -436,12 +436,12 @@ public enum StorageLocator {
     }
 
     public static func legacySharedRoots() -> [URL] {
-        [cardfileAppGroupID, mymindAppGroupID].compactMap {
+        [cardfileAppGroupID, legacyAppGroupID].compactMap {
             FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: $0)
         }
     }
 
-    /// One-shot: if Stowmark's group / support is empty, copy from Cardfile or My Mind groups.
+    /// One-shot: if Stowmark's group / support is empty, copy from earlier-build groups.
     /// Never deletes the legacy containers.
     private static func migrateLegacySharedContainersIfNeeded(into appSupport: URL) {
         let sources = legacySharedRoots().filter { LibraryReplica.hasDatabase(at: $0) }

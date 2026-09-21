@@ -10,7 +10,7 @@ Selected screen composition (per key screen): Library default is an equal-size c
 Why this is not a generic template app (transplant test): cards change silhouette with content kind, the retention line states what is actually on disk, and search chips are constraints on saved fields — transplanting this shell onto a chat or finance app would leave those objects meaningless
 Platform conventions honored (HIG / Material / PWA), per platform: standard Mac window and sidebar, system text styles, Settings scene, command shortcuts, no phone tab bar, no invented status-bar chrome, no wrapped web view
 Style atlas match: quiet warm paper canvas, one green accent, content color dominates, functional and honest rather than a dashboard
-Reference moves borrowed (max 3, with verification grade): macOS Messages split view (Apple HIG, platform convention); search-led visual cards as described by the product blueprint’s mymind reference (inspiration only, screens not copied); kind-specific card treatments from the blueprint mockups (labeled-simulated, not a shipped app)
+Reference moves borrowed (max 3, with verification grade): macOS Messages split view (Apple HIG, platform convention); search-led visual cards as described by the product blueprint (inspiration only, screens not copied); kind-specific card treatments from the blueprint mockups (labeled-simulated, not a shipped app)
 Template budget for this category / templated elements used / justification if > 0: 0 / 0 / utility budget is zero templated rows; shelves are navigation places, not a horizontal media template
 Tab bar: no tab bar
 FAB: none — paste and drop live in the library capture bar, which is not mounted on a tab chassis and does not appear on preview, settings, or import

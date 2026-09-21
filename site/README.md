@@ -1,8 +1,8 @@
 # Stowmark landing
 
-Static page for the public alpha. Live: https://p0gl0l.github.io/my-mind/
+Static page for the public alpha. Live: https://asv-labs.github.io/stowmark/
 
-Download is pinned to [v1.0.0-alpha.13](https://github.com/P0GL0L/my-mind/releases/tag/v1.0.0-alpha.13).
+Download is pinned to [v1.0.0-alpha.13](https://github.com/ASV-Labs/stowmark/releases/tag/v1.0.0-alpha.13).
 
 Preview locally:
 

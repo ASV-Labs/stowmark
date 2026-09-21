@@ -12,14 +12,14 @@ The library is local. Each item shows what was actually saved — a bookmark, a 
 
 ## Install
 
-Download [Stowmark-1.0.0-alpha.13.dmg](https://github.com/P0GL0L/my-mind/releases/download/v1.0.0-alpha.13/Stowmark-1.0.0-alpha.13.dmg) from the [v1.0.0-alpha.13 release](https://github.com/P0GL0L/my-mind/releases/tag/v1.0.0-alpha.13), drag **Stowmark** into Applications, then right-click → Open.
+Download [Stowmark-1.0.0-alpha.13.dmg](https://github.com/ASV-Labs/stowmark/releases/download/v1.0.0-alpha.13/Stowmark-1.0.0-alpha.13.dmg) from the [v1.0.0-alpha.13 release](https://github.com/ASV-Labs/stowmark/releases/tag/v1.0.0-alpha.13), drag **Stowmark** into Applications, then right-click → Open.
 
 - Paste a link into the capture bar, or use Share / Services / Dock / Shortcuts / the menu bar (browser extensions are Coming soon)
 - Search with Command-F (“Search your library”)
 - Layout switcher: Cards, Rows & Columns, Covers
 - Settings (⌘,) — General, Library, Capture, Help. Help → Stowmark Help (⇧⌘/) opens the in-app guide.
 
-Export writes a **Stowmark Library** (`.stowmark`). Older `.cardfile` and `.mymind` archives still restore.
+Export writes a **Stowmark Library** (`.stowmark`). Archives from earlier builds still restore.
 
 ## Build from source
 

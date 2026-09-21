@@ -1,6 +1,6 @@
 {
   "schema_version": "adi.verify.v1",
-  "build_dir": "/Users/charlesbonetti/my-mind",
+  "build_dir": ".",
   "mode": "static-heuristics (no compile/render/device; necessary, never sufficient)",
   "declared_platforms": [
     "ios"

@@ -874,7 +874,7 @@ struct LibraryShell: View {
             Text(model.startupError ?? "Unknown problem")
                 .font(.body)
                 .textSelection(.enabled)
-            Text("You can start a new empty library on this Mac. If you already exported a .stowmark, .cardfile, or .mymind archive, restore it afterwards from Settings.")
+            Text("You can start a new empty library on this Mac. If you already exported a .stowmark archive, restore it afterwards from Settings.")
                 .font(.body)
                 .foregroundStyle(Theme.secondary(scheme))
             HStack(spacing: 12) {
