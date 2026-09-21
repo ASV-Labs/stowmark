@@ -31,7 +31,7 @@ A visitor should **understand** that Stowmark is a local visual library on their
 ## Subject-specific cues
 
 1. Capture bar language from the shipping app: “Paste a link or drop a file.”
-2. Paper / ink / forest green tokens from `Sources/Stowmark/Theme.swift` (`#F3EDE4`, `#1F1A16`, `#1B5E3B`). The shipping name is Stowmark; My Mind and Cardfile remain only as former-name honesty.
+2. Paper / ink / forest green tokens from `Sources/Stowmark/Theme.swift` (`#F3EDE4`, `#1F1A16`, `#1B5E3B`). Visitor-facing copy uses Stowmark only.
 3. Kind inventory the library actually stores: links, images, excerpts, and PDFs — plus the real layout names Cards, Rows & Columns, Covers.
 
 ## Selected composition
