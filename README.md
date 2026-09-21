@@ -6,13 +6,13 @@ Collect links, images, PDFs, and excerpts in one place. Browse visually, organiz
 
 A home for what you find.
 
-Public alpha **1.0.0-alpha.12**. Proprietary evaluation license — see [`LICENSE`](LICENSE). Not App Store, not notarized: first launch is right-click → Open.
+Public alpha **1.0.0-alpha.13**. Proprietary evaluation license — see [`LICENSE`](LICENSE). Not App Store, not notarized: first launch is right-click → Open.
 
 The library is local. Each item shows what was actually saved — a bookmark, a copied file, or an excerpt — so links are not advertised as full offline page archives.
 
 ## Install
 
-Download the DMG from the [latest GitHub release](https://github.com/P0GL0L/my-mind/releases/latest), drag **Stowmark** into Applications, then right-click → Open.
+Download [Stowmark-1.0.0-alpha.13.dmg](https://github.com/P0GL0L/my-mind/releases/download/v1.0.0-alpha.13/Stowmark-1.0.0-alpha.13.dmg) from the [v1.0.0-alpha.13 release](https://github.com/P0GL0L/my-mind/releases/tag/v1.0.0-alpha.13), drag **Stowmark** into Applications, then right-click → Open.
 
 - Paste a link into the capture bar, or use Share / Services / Dock / Shortcuts / the menu bar (browser extensions are Coming soon)
 - Search with Command-F (“Search your library”)

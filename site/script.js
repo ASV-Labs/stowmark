@@ -41,8 +41,8 @@
     stage.replaceChildren(video);
     if (status) {
       status.textContent = hasCaptions
-        ? "Walkthrough film for alpha 1.0.0-alpha.10, with captions."
-        : "Walkthrough film for alpha 1.0.0-alpha.10. Add demo.en.vtt for captions.";
+        ? "Walkthrough film for alpha 1.0.0-alpha.13, with captions."
+        : "Walkthrough film for alpha 1.0.0-alpha.13. Add demo.en.vtt for captions.";
     }
   });
 })();

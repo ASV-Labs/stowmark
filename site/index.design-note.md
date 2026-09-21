@@ -7,8 +7,8 @@ Page file: `index.html`
 ```text
 Project/topic: Stowmark public-alpha landing
 Page or site type: software-product
-Primary audience: Mac evaluators who already have or will receive the private GitHub release
-Primary user action: download Stowmark-1.0.0-alpha.10.dmg and open it with Gatekeeper
+Primary audience: Mac evaluators who will download the public GitHub release
+Primary user action: download Stowmark-1.0.0-alpha.13.dmg and open it with Gatekeeper
 Secondary user action: understand the save → keep → find → export loop, then drop in a walkthrough film later
 Emotional tone: precise, trustworthy, warm
 Content density: editorial; operational facts over adjectives
@@ -22,7 +22,7 @@ Implementation stack: static HTML + CSS + one progressive-enhancement script; no
 
 ## Experience thesis
 
-A visitor should **understand** that Stowmark is a local visual library on their Mac, **feel** the paper desk of the app rather than a SaaS dashboard, **believe** the limits because they are designed in, and **do** download alpha.10.
+A visitor should **understand** that Stowmark is a local visual library on their Mac, **feel** the paper desk of the app rather than a SaaS dashboard, **believe** the limits because they are designed in, and **do** download alpha.13.
 
 ## Creative concept
 
@@ -31,8 +31,8 @@ A visitor should **understand** that Stowmark is a local visual library on their
 ## Subject-specific cues
 
 1. Capture bar language from the shipping app: “Paste a link or drop a file.”
-2. Paper / ink / forest green tokens from `Sources/Stowmark/Theme.swift` (`#F3EDE4`, `#1F1A16`, `#1B5E3B`). The shipping name is Stowmark; My Mind remains only as a former-name honesty line.
-3. Kind inventory the library actually stores: links, images, excerpts, PDFs — plus the real layout names Cards, Rows & Columns, Covers.
+2. Paper / ink / forest green tokens from `Sources/Stowmark/Theme.swift` (`#F3EDE4`, `#1F1A16`, `#1B5E3B`). The shipping name is Stowmark; My Mind and Cardfile remain only as former-name honesty.
+3. Kind inventory the library actually stores: links, images, excerpts, and PDFs — plus the real layout names Cards, Rows & Columns, Covers.
 
 ## Selected composition
 
@@ -54,10 +54,10 @@ Why it fits: evaluators need the sequence they will perform after the DMG, not a
 
 | Section | Job | Visitor question | Evidence | Treatment | Transition | Mobile |
 | --- | --- | --- | --- | --- | --- | --- |
-| Stamp | Date the build | Which alpha? | `VERSION` 1.0.0-alpha.10 | Hairline stamp, not a banner ad | into hero | wraps to two lines |
-| Hero | Name the product and download | What is this / how do I get it? | DMG URL, SHA-256 | Left type + one CTA; film plate on the right | into spine | type, CTA, then plate |
+| Stamp | Date the build | Which alpha? | `VERSION` 1.0.0-alpha.13 | Hairline stamp, not a banner ad | into hero | wraps to two lines |
+| Hero | Name the product and download | What is this / how do I get it? | Direct DMG URL, SHA-256 | Left type + one CTA; film plate on the right | into spine | type, CTA, then plate |
 | Film plate | Hold the forthcoming recording | Where is the demo? | Honest “being cut” copy; `assets/demo.mp4` upgrade path | Identity still-life on ruled paper; not a fake Mac window | into 01 | full width under type |
-| 01–04 spine | Map the loop | What happens after install? | Capture paths, local SQLite, Cmd-F layouts, `.mymind` export | Numbered ledger rows, each with a real artifact | into install | stacked rows, numbers stay |
+| 01–04 spine | Map the loop | What happens after install? | Capture paths, local SQLite, Cmd-F layouts, `.stowmark` export | Numbered ledger rows, each with a real artifact | into install | stacked rows, numbers stay |
 | Install | Get it open | Why won’t it launch? | Gatekeeper right-click Open | Numbered procedure | into limits | same order |
 | Limits | Design the constraint | What is missing? | ALPHA-NOTES known limits | Honesty band | footer | stacked facts |
 
@@ -94,17 +94,46 @@ Product imagery provenance: none
 Visitor-facing product proof: none — honest text/provenance only
 Static product screenshots in visitor-facing content: none
 
-The walkthrough film is being cut. `site/assets/demo.mp4` plus `site/assets/demo.en.vtt` will become a `source-bound recording @ v1.0.0-alpha.10` in a later pass. Until that file exists, the plate is identity media and honest copy. A progressive script may promote the plate only when the file is present; the shipped HTML does not contain a `<video>` proof node.
+The walkthrough film is being cut. `site/assets/demo.mp4` plus `site/assets/demo.en.vtt` will become a `source-bound recording @ v1.0.0-alpha.13` in a later pass. Until that file exists, the plate is identity media and honest copy. A progressive script may promote the plate only when the file is present; the shipped HTML does not contain a `<video>` proof node.
+
+## Distribution preview (WDI-013)
+
+```text
+Distribution preview
+Route ID: stowmark-landing
+Canonical URL: https://p0gl0l.github.io/my-mind/
+Preview title: Stowmark — local visual library for Mac
+Preview description: Public alpha 1.0.0-alpha.13. Save a link or a file. It stays on this Mac. No account.
+Site/product name: Stowmark
+Preview image path: site/assets/og-stowmark-1.0.0-alpha.13.png
+Preview image public absolute URL: https://p0gl0l.github.io/my-mind/assets/og-stowmark-1.0.0-alpha.13.png
+Preview image alt text: Stowmark wordmark and app icon on ruled paper, labeled public alpha 1.0.0-alpha.13, local visual library for Mac.
+Preview image provenance: none
+Route-specific or host fallback: route-specific
+Fallback justification, if any: none
+Expected light behavior: paper #F3EDE4 field, ink type, forest accent, identity icon. One raster for all crawlers.
+Expected dark behavior: same raster; crawlers do not receive a different claim.
+Large-card crop behavior: wordmark, icon, and alpha line remain inside the central 80 percent.
+Compact-card crop behavior: wordmark and icon remain; supporting line may clip.
+Build verification evidence: raster 1200×630 PNG, 139589 bytes, SHA-256 8333d3cb8b73b227a04f0a8da0da1b776ee899aab29955919b7b8cb7c11f7f19; ratio 1.9048 in the 1.88–1.94 band; type-led identity, no product UI. design_gate.py verify site → exit 0.
+Preview-render inspection evidence: large card inspected; wordmark, icon, and alpha line sit in the central field. Compact crop keeps wordmark and icon.
+Deployed-route verification evidence: NOT_DEPLOYED
+Platform cache-refresh state: NOT_REFRESHED
+Actual platform-preview inspection evidence: NOT_RUN
+Founder-acceptance state: NOT_ACCEPTED
+```
+
+The preview raster is type-led identity on the product paper, not a product screenshot and not the in-app brand-lockup PNG (that lockup uses a different mark and misspells the name).
 
 ## Motion / responsive / accessibility / performance
 
 - Motion: focus ring and button color; reduced-motion disables transitions; no autoplay.
 - Responsive: at ≤720px the hero stacks claim → download → plate. Touch targets ≥44px. Nav collapses to a compact row with the download control remaining visible.
 - Accessibility: skip link, landmarks, visible focus, 4.5:1 ink on paper, `aria-current` on in-page targets, SHA-256 in a selectable `<code>`.
-- Performance: one PNG identity asset, no webfonts, no analytics.
+- Performance: identity PNG plus one OG raster, no webfonts, no analytics.
 
 ## Authorship review plan
 
-- Interchangeability: replace name/colors — the capture origins, Gatekeeper steps, `.mymind` archive, and SHA-256 still describe this Mac library, not a generic app.
+- Interchangeability: replace name/colors — the capture origins, Gatekeeper steps, `.stowmark` archive, and SHA-256 still describe this Mac library, not a generic app.
 - Screenshot: three crops (hero, spine, honesty band) share paper/ink/green and differ in composition.
 - Explanation: every major decision maps to Theme.swift, ALPHA-NOTES, or a WDI signature.

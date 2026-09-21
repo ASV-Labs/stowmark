@@ -41,4 +41,4 @@ Authorship: interchangeability=PASS; screenshot=PASS; explanation=PASS
 
 ## Signature conformance
 
-Selected composition: product-walkthrough. Numbered 01–04 with per-step artifacts (capture copy, retention, search copy, `.stowmark` archive). No static product still standing for the loop. Visitor-facing product proof is none until `assets/demo.mp4` exists.
+Selected composition: product-walkthrough. Numbered 01–04 with per-step artifacts (capture copy, retention, search copy, `.stowmark` archive plus the alpha.13 SHA-256). No static product still standing for the loop. Visitor-facing product proof is none until `assets/demo.mp4` exists. Distribution preview is a type-led 1200×630 raster, not in-page product UI.

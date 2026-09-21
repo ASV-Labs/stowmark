@@ -1,6 +1,10 @@
 # Stowmark landing
 
-Static page for the public alpha. Preview:
+Static page for the public alpha. Live: https://p0gl0l.github.io/my-mind/
+
+Download is pinned to [v1.0.0-alpha.13](https://github.com/P0GL0L/my-mind/releases/tag/v1.0.0-alpha.13).
+
+Preview locally:
 
 ```bash
 open site/index.html

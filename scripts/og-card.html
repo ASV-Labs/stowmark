@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Stowmark OG card</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 1200px;
+      height: 630px;
+      overflow: hidden;
+      background: #F3EDE4;
+      color: #1F1A16;
+      font-family: "Avenir Next", "Segoe UI", system-ui, sans-serif;
+    }
+    body {
+      background-image: repeating-linear-gradient(
+        to bottom,
+        transparent 0,
+        transparent 31px,
+        #E4D9CC 31px,
+        #E4D9CC 32px
+      );
+    }
+    .frame {
+      width: 1200px;
+      height: 630px;
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 56px;
+      align-items: center;
+      padding: 72px 88px;
+      box-sizing: border-box;
+    }
+    .icon {
+      width: 280px;
+      height: 280px;
+      border-radius: 62px;
+      display: block;
+    }
+    .copy { min-width: 0; }
+    .kicker {
+      margin: 0 0 18px;
+      font-size: 22px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: #1B5E3B;
+      font-weight: 700;
+    }
+    h1 {
+      margin: 0;
+      font-family: "Iowan Old Style", Palatino, "Times New Roman", serif;
+      font-size: 96px;
+      font-weight: 600;
+      letter-spacing: -0.03em;
+      line-height: 0.95;
+    }
+    .lede {
+      margin: 22px 0 0;
+      font-size: 32px;
+      line-height: 1.25;
+      color: #4E463F;
+      max-width: 18ch;
+    }
+    .meta {
+      margin: 28px 0 0;
+      font-size: 20px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #1B5E3B;
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <img class="icon" src="../site/assets/app-icon.png" alt="">
+    <div class="copy">
+      <p class="kicker">Mac · local-first</p>
+      <h1>Stowmark</h1>
+      <p class="lede">Your visual library. On your Mac.</p>
+      <p class="meta">Public alpha · 1.0.0-alpha.13</p>
+    </div>
+  </div>
+</body>
+</html>

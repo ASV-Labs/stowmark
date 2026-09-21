@@ -1,0 +1,20 @@
+{
+  "routeId": "stowmark-landing",
+  "canonicalUrl": "https://p0gl0l.github.io/my-mind/",
+  "siteName": "Stowmark",
+  "title": "Stowmark — local visual library for Mac",
+  "description": "Public alpha 1.0.0-alpha.13. Save a link or a file. It stays on this Mac. No account.",
+  "imageUrl": "https://p0gl0l.github.io/my-mind/assets/og-stowmark-1.0.0-alpha.13.png",
+  "imageMime": "image/png",
+  "imageWidth": 1200,
+  "imageHeight": 630,
+  "imageAlt": "Stowmark wordmark and app icon on ruled paper, labeled public alpha 1.0.0-alpha.13, local visual library for Mac.",
+  "cardType": "summary_large_image",
+  "imageSha256": "8333d3cb8b73b227a04f0a8da0da1b776ee899aab29955919b7b8cb7c11f7f19",
+  "imageByteSize": 139589,
+  "provenance": {
+    "kind": "none",
+    "ref": "type-led owned asset @ site/assets/app-icon.png + Theme.swift paper/ink/accent",
+    "capturedAt": null
+  }
+}

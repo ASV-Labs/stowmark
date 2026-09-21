@@ -4,12 +4,29 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Stowmark — local visual library for Mac</title>
-  <meta name="description" content="Stowmark keeps links, images, excerpts, and PDFs in a local library on your Mac. Public alpha. No account. No cloud library. Formerly My Mind.">
+  <meta name="description" content="Public alpha 1.0.0-alpha.13. Save a link or a file. It stays on this Mac. No account.">
   <meta name="theme-color" content="#F3EDE4">
   <link rel="icon" href="assets/app-icon.png" type="image/png">
+  <link rel="canonical" href="https://p0gl0l.github.io/my-mind/">
+
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Stowmark">
   <meta property="og:title" content="Stowmark — local visual library for Mac">
-  <meta property="og:description" content="Save a link, find it later, keep the file on this Mac. Public alpha.">
-  <meta property="og:image" content="assets/app-icon.png">
+  <meta property="og:description" content="Public alpha 1.0.0-alpha.13. Save a link or a file. It stays on this Mac. No account.">
+  <meta property="og:url" content="https://p0gl0l.github.io/my-mind/">
+  <meta property="og:image" content="https://p0gl0l.github.io/my-mind/assets/og-stowmark-1.0.0-alpha.13.png">
+  <meta property="og:image:secure_url" content="https://p0gl0l.github.io/my-mind/assets/og-stowmark-1.0.0-alpha.13.png">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Stowmark wordmark and app icon on ruled paper, labeled public alpha 1.0.0-alpha.13, local visual library for Mac.">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Stowmark — local visual library for Mac">
+  <meta name="twitter:description" content="Public alpha 1.0.0-alpha.13. Save a link or a file. It stays on this Mac. No account.">
+  <meta name="twitter:image" content="https://p0gl0l.github.io/my-mind/assets/og-stowmark-1.0.0-alpha.13.png">
+  <meta name="twitter:image:alt" content="Stowmark wordmark and app icon on ruled paper, labeled public alpha 1.0.0-alpha.13, local visual library for Mac.">
+
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -23,13 +40,13 @@
         <a href="#install">Install</a>
         <a href="#limits">Limits</a>
       </nav>
-      <a class="btn btn-small" href="https://github.com/P0GL0L/my-mind/releases/latest">Download DMG</a>
+      <a class="btn btn-small" href="https://github.com/P0GL0L/my-mind/releases/download/v1.0.0-alpha.13/Stowmark-1.0.0-alpha.13.dmg">Download DMG</a>
     </div>
   </header>
 
   <main id="main">
     <p class="stamp wrap" id="top">
-      <span>Public alpha</span>
+      <span>Public alpha 1.0.0-alpha.13</span>
       <span aria-hidden="true">·</span>
       <span>Formerly My Mind</span>
       <span aria-hidden="true">·</span>
@@ -44,10 +61,12 @@
         <h1 id="hero-title">Keep what you save. <span>It stays on this Mac.</span></h1>
         <p class="lede">Stowmark is a visual library for links, images, excerpts, and PDFs. Paste a link or drop a file. Search later. No account, no cloud library.</p>
         <p class="hero-actions">
-          <a class="btn" href="https://github.com/P0GL0L/my-mind/releases/latest">Download the alpha DMG</a>
-          <a class="text-link" href="https://github.com/P0GL0L/my-mind/releases/latest">Release notes</a>
+          <a class="btn" href="https://github.com/P0GL0L/my-mind/releases/download/v1.0.0-alpha.13/Stowmark-1.0.0-alpha.13.dmg">Download the alpha DMG</a>
+          <a class="text-link" href="https://github.com/P0GL0L/my-mind/releases/tag/v1.0.0-alpha.13">Release notes</a>
         </p>
-        <p class="hash">Checksums are on the GitHub release next to the disk image.</p>
+        <p class="hash">SHA-256 of this disk image:
+          <code>4de12880e8df4ad59fa45fb57129808ca585374b7529a280809cefcc16ac2360</code>
+        </p>
       </div>
 
       <figure class="plate" id="film" aria-labelledby="film-title">
@@ -71,7 +90,7 @@
           <span class="idx" aria-hidden="true">01</span>
           <div>
             <h3>Save from the place you already are</h3>
-            <p>Paste a link or drop a file into the capture bar. The same store also accepts Share, Services, Dock drop, Shortcuts, and the menu bar icon. Browser extensions are Coming soon.</p>
+            <p>Paste a link or drop a file into the capture bar. The same store also accepts Share, Services, Dock drop, Shortcuts, the menu bar icon, and an opt-in clipboard watcher. Browser extensions are Coming soon.</p>
             <p class="artifact"><span>Artifact</span> Capture bar copy in the shipping app: “Paste a link or drop a file.”</p>
           </div>
         </li>
@@ -79,7 +98,7 @@
           <span class="idx" aria-hidden="true">02</span>
           <div>
             <h3>Keep it on disk, not in an account</h3>
-            <p>The library is a local SQLite file. A public web link may still be fetched for a title and preview unless you turn previews off. Private and loopback addresses are stored as bookmarks and are not fetched.</p>
+            <p>The library is a local SQLite file. A public web link may still be fetched for a title and preview unless you turn previews off. Private and loopback addresses are stored as bookmarks and are not fetched. This build also copies GIF and WebP images, and keeps an on-disk article when the page is extractable.</p>
             <p class="artifact"><span>Artifact</span> Retention is honest: bookmark, copied file, or excerpt — stated on the card, not implied.</p>
           </div>
         </li>
@@ -95,8 +114,8 @@
           <span class="idx" aria-hidden="true">04</span>
           <div>
             <h3>Leave with a copy you can restore</h3>
-            <p>Export and restore use a <code>.stowmark</code> archive from Settings. The alpha is an evaluation build: keep your own export if the library matters.</p>
-            <p class="artifact"><span>Artifact</span> GitHub release assets include the DMG and a SHA-256 sidecar.</p>
+            <p>Export and restore use a <code>.stowmark</code> archive from Settings. Older <code>.cardfile</code> and <code>.mymind</code> archives still restore. The alpha is an evaluation build: keep your own export if the library matters.</p>
+            <p class="artifact"><span>Artifact</span> Release asset: <code>Stowmark-1.0.0-alpha.13.dmg</code> · SHA-256 <code>4de12880e8df4ad59fa45fb57129808ca585374b7529a280809cefcc16ac2360</code></p>
           </div>
         </li>
       </ol>
@@ -133,7 +152,7 @@
       <dl class="facts">
         <div>
           <dt>Name</dt>
-          <dd>Developed as My Mind. Renamed to Stowmark to stay clear of mymind.com. Same local library.</dd>
+          <dd>Developed as My Mind, then Cardfile. Shipping name is Stowmark, to stay clear of mymind.com. Same local library; this build migrates the older Application Support folders and App Groups.</dd>
         </div>
         <div>
           <dt>Notarization</dt>
@@ -141,15 +160,15 @@
         </div>
         <div>
           <dt>Chrome / Safari extensions</dt>
-          <dd>Coming soon in this alpha. Use Share, Services, paste, or the menu bar. A Chrome Web Store listing is not published yet.</dd>
+          <dd>Coming soon in this alpha. Use Share, Services, paste, drop, or the menu bar. A Chrome Web Store listing is not published yet.</dd>
         </div>
         <div>
           <dt>Media types</dt>
-          <dd>GIF, WebP, TIFF, SVG, and video are not accepted yet.</dd>
+          <dd>GIF and WebP copy in this alpha. TIFF, SVG, and video are not accepted yet.</dd>
         </div>
         <div>
           <dt>License</dt>
-          <dd>Proprietary evaluation. Personal use on your Mac. No redistribution, commercial use, or rebrand without written permission. See <a href="https://github.com/P0GL0L/my-mind/blob/cursor/visual-library-app/LICENSE">LICENSE</a>.</dd>
+          <dd>Proprietary evaluation. Personal use on your Mac. No redistribution, commercial use, or rebrand without written permission. See <a href="https://github.com/P0GL0L/my-mind/blob/v1.0.0-alpha.13/LICENSE">LICENSE</a>.</dd>
         </div>
       </dl>
     </section>
@@ -158,7 +177,7 @@
   <footer class="foot">
     <div class="wrap foot-inner">
       <p>Stowmark · Charles Bonetti · 2026</p>
-      <p><a href="https://github.com/P0GL0L/my-mind">Source</a> · <a href="https://github.com/P0GL0L/my-mind/releases/latest">Releases</a></p>
+      <p><a href="https://github.com/P0GL0L/my-mind">Source</a> · <a href="https://github.com/P0GL0L/my-mind/releases/tag/v1.0.0-alpha.13">v1.0.0-alpha.13</a></p>
     </div>
   </footer>
 
