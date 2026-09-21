@@ -578,7 +578,7 @@ enum ShareIntake {
             return "Not saved. That file is over the 100 MB limit."
         }
         if collected.skippedUnsupported > 0 {
-            return "Not saved. Stowmark can copy JPEG, PNG, HEIC, and PDF files."
+            return FileSignature.unsupportedMessage
         }
         return "Not saved. Nothing was shared."
     }
@@ -709,6 +709,14 @@ enum ShareIntake {
         if data.starts(with: [0xFF, 0xD8, 0xFF]) { return .jpeg }
         if data.starts(with: [0x89, 0x50, 0x4E, 0x47]) { return .png }
         if data.starts(with: [0x25, 0x50, 0x44, 0x46]) { return .pdf }
+        if data.starts(with: [0x47, 0x49, 0x46, 0x38]) { return .gif }
+        if data.count >= 12 {
+            let riff = Data(data[0..<4])
+            let webp = Data(data[8..<12])
+            if riff == Data([0x52, 0x49, 0x46, 0x46]), webp == Data([0x57, 0x45, 0x42, 0x50]) {
+                return .webp
+            }
+        }
         guard data.count >= 12 else { return nil }
         let brand = Data(data[4..<12])
         if let text = String(data: brand, encoding: .ascii), text.hasPrefix("ftyp") {
@@ -820,13 +828,15 @@ private enum FileRead {
 }
 
 private enum Sniff {
-    case jpeg, png, heic, pdf
+    case jpeg, png, heic, gif, webp, pdf
 
     var ext: String {
         switch self {
         case .jpeg: "jpg"
         case .png: "png"
         case .heic: "heic"
+        case .gif: "gif"
+        case .webp: "webp"
         case .pdf: "pdf"
         }
     }
@@ -836,11 +846,15 @@ private enum Sniff {
         case .jpeg: "image/jpeg"
         case .png: "image/png"
         case .heic: "image/heic"
+        case .gif: "image/gif"
+        case .webp: "image/webp"
         case .pdf: "application/pdf"
         }
     }
 
-    var kind: CaptureKind { self == .pdf ? .pdf : .image }
+    var kind: CaptureKind {
+        self == .pdf ? .pdf : .image
+    }
 }
 
 enum ShareText {

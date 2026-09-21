@@ -475,10 +475,20 @@ struct ItemPreview: View {
                     }
                 }
                 HStack(spacing: 8) {
-                    Button(item.originalAsset == nil ? "Open original" : "Open saved file") { model.openOriginal(item) }
-                        .buttonStyle(.borderedProminent)
-                        .tint(Theme.accent(scheme))
-                        .frame(minHeight: 44)
+                    if item.articleAsset != nil {
+                        Button("Read saved article") { model.openArticleReader(item.id) }
+                            .buttonStyle(.borderedProminent)
+                            .tint(Theme.accent(scheme))
+                            .frame(minHeight: 44)
+                        Button(item.originalAsset == nil ? "Open original" : "Open saved file") { model.openOriginal(item) }
+                            .buttonStyle(.bordered)
+                            .frame(minHeight: 44)
+                    } else {
+                        Button(item.originalAsset == nil ? "Open original" : "Open saved file") { model.openOriginal(item) }
+                            .buttonStyle(.borderedProminent)
+                            .tint(Theme.accent(scheme))
+                            .frame(minHeight: 44)
+                    }
                     if let link = copyableLink {
                         Button("Copy link") { copyLink(link) }
                             .buttonStyle(.bordered)
@@ -663,6 +673,7 @@ struct ItemPreview: View {
 extension Notification.Name {
     static let filterTag = Notification.Name("Stowmark.filterTag")
     static let openStowmarkSettings = Notification.Name("Stowmark.openSettings")
+    static let openStowmarkHelp = Notification.Name("Stowmark.openHelp")
 }
 
 struct CoverTile: View {

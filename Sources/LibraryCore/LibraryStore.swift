@@ -28,6 +28,7 @@ public final class LibraryStore: @unchecked Sendable {
         let fileManager = FileManager.default
         try fileManager.createDirectory(at: root.appendingPathComponent("assets/originals"), withIntermediateDirectories: true)
         try fileManager.createDirectory(at: root.appendingPathComponent("assets/previews"), withIntermediateDirectories: true)
+        try fileManager.createDirectory(at: root.appendingPathComponent("assets/articles"), withIntermediateDirectories: true)
         try fileManager.createDirectory(at: root.appendingPathComponent("staging"), withIntermediateDirectories: true)
         db = try SQLDatabase(path: databaseURL.path)
         let formatter = ISO8601DateFormatter()
@@ -606,7 +607,7 @@ public final class LibraryStore: @unchecked Sendable {
         }
     }
 
-    public func completeEnrichment(itemID: UUID, metadata: PageMetadata, preview: Data?, previewFailed: Bool) throws {
+    public func completeEnrichment(itemID: UUID, metadata: PageMetadata, preview: Data?, previewFailed: Bool, articleHTML: String? = nil) throws {
         try sync {
             guard let item = try hydrate(ids: [key(itemID)]).first else { return }
             if item.titleOrigin != .user, let title = metadata.title, !title.isEmpty, title.count <= Limits.maxTitleCharacters {
@@ -663,8 +664,48 @@ public final class LibraryStore: @unchecked Sendable {
             } else if previewFailed || item.previewState == .pending {
                 try db.execute("UPDATE items SET preview_state = 'unavailable' WHERE id = ? AND preview_state = 'pending'", [.text(key(itemID))])
             }
+            if let articleHTML, let bytes = articleHTML.data(using: .utf8), bytes.count <= Limits.maxAttachmentBytes {
+                let staged = try stage(data: bytes, folder: "assets/articles")
+                try db.execute("DELETE FROM assets WHERE item_id = ? AND role = 'article'", [.text(key(itemID))])
+                try db.execute(
+                    "INSERT INTO assets(id, item_id, sha256, relative_path, mime_type, byte_count, role) VALUES(?, ?, ?, ?, ?, ?, 'article')",
+                    [.text(staged.id), .text(key(itemID)), .text(staged.hash), .text(staged.relative), .text("text/html"), .int(Int64(bytes.count))]
+                )
+                if item.retention == .bookmark {
+                    try db.execute(
+                        "UPDATE items SET retention_state = 'archivedArticle', kind = CASE WHEN kind = 'link' THEN 'article' ELSE kind END, updated_at = ? WHERE id = ?",
+                        [.text(stamp(Date())), .text(key(itemID))]
+                    )
+                }
+            }
             try db.execute("UPDATE enrichment_jobs SET status = 'done', error_class = NULL WHERE item_id = ? AND status = 'pending'", [.text(key(itemID))])
             try writeSearch(id: key(itemID))
+        }
+    }
+
+    /// Attach on-device color / OCR suggestions after an image was copied.
+    public func applyVisualSuggestions(itemID: UUID, colorTags: [String], ocrText: String?) throws {
+        try sync {
+            for label in colorTags {
+                guard let display = TagText.display(for: label), let normalized = TagText.normalize(label) else { continue }
+                try upsertTag(itemID: key(itemID), display: display, normalized: normalized, status: "suggested", origin: "vision", onlyIfMissing: true)
+            }
+            if let ocrText, !ocrText.isEmpty {
+                let existing = try db.query("SELECT description, description_origin FROM items WHERE id = ?", [.text(key(itemID))]).first
+                let hasUserSummary = existing?.string("description_origin") == "user"
+                let blank = (existing?.string("description") ?? "").isEmpty
+                if !hasUserSummary, blank {
+                    try db.execute(
+                        "UPDATE items SET description = ?, description_origin = 'metadata', updated_at = ? WHERE id = ?",
+                        [.text(String(ocrText.prefix(2_000))), .text(stamp(Date())), .text(key(itemID))]
+                    )
+                }
+                for label in TagSuggestions.suggest(title: "", description: nil, excerpt: ocrText, extras: []) {
+                    guard let display = TagText.display(for: label), let normalized = TagText.normalize(label) else { continue }
+                    try upsertTag(itemID: key(itemID), display: display, normalized: normalized, status: "suggested", origin: "ocr", onlyIfMissing: true)
+                }
+                try writeSearch(id: key(itemID))
+            }
         }
     }
 

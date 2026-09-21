@@ -83,11 +83,35 @@ struct LibraryShell: View {
             NSApp.activate(ignoringOtherApps: true)
             openSettings()
         }
+        .onReceive(NotificationCenter.default.publisher(for: .openStowmarkHelp)) { _ in
+            UserDefaults.standard.set("help", forKey: "stowmark.settingsTab")
+            NSApp.activate(ignoringOtherApps: true)
+            openSettings()
+        }
         .fileImporter(isPresented: $importFile, allowedContentTypes: importTypes) { result in
             if case .success(let url) = result { model.importFile(url) }
         }
         .sheet(isPresented: Binding(get: { model.importPlan != nil }, set: { if !$0 { model.importPlan = nil } })) {
             importSheet
+        }
+        .sheet(isPresented: Binding(
+            get: { model.readingItemID != nil },
+            set: { if !$0 { model.closeArticleReader() } }
+        )) {
+            if let id = model.readingItemID,
+               let item = model.items.first(where: { $0.id == id }) ?? liveItem(id),
+               let html = model.articleHTML(for: item) {
+                ArticleReaderSheet(title: item.title, html: html) {
+                    model.closeArticleReader()
+                }
+            } else {
+                VStack(spacing: 12) {
+                    Text("No saved article is available for this item.")
+                    Button("Close") { model.closeArticleReader() }
+                }
+                .padding(24)
+                .frame(minWidth: 320, minHeight: 160)
+            }
         }
         .onAppear {
             tableSort = [Self.tableComparator(for: model.listOrder)]
@@ -183,12 +207,11 @@ struct LibraryShell: View {
 
     private var sidebar: some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text("Stowmark")
-                .font(.title2)
-                .foregroundStyle(Theme.ink(scheme))
+            BrandLogo(height: 28)
                 .padding(.horizontal, 20)
                 .padding(.top, 28)
                 .padding(.bottom, 18)
+                .frame(maxWidth: .infinity, alignment: .leading)
             placeRow("All items", count: model.allCount, place: .all, symbol: "square.grid.2x2")
             placeRow("Favorites", count: model.favoriteCount, place: .favorites, symbol: "star")
             Text("Shelves")
@@ -507,10 +530,17 @@ struct LibraryShell: View {
             }
 
             if let message = model.captureMessage {
-                Text(message)
-                    .font(.callout)
-                    .foregroundStyle(model.captureFailed ? Theme.danger(scheme) : Theme.accent(scheme))
-                    .accessibilityLabel(message)
+                HStack(alignment: .firstTextBaseline, spacing: 10) {
+                    Text(message)
+                        .font(.callout)
+                        .foregroundStyle(model.captureFailed ? Theme.danger(scheme) : Theme.accent(scheme))
+                        .accessibilityLabel(message)
+                    if model.canRetryCapture {
+                        Button("Retry") { model.retryLastCapture() }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+                    }
+                }
             }
         }
         .padding(.horizontal, 20)
@@ -745,7 +775,7 @@ struct LibraryShell: View {
             Text("Start with something worth keeping.")
                 .font(.largeTitle)
                 .foregroundStyle(Theme.ink(scheme))
-            Text("Drop a link, image, PDF, or text here. Paste into the capture bar, save from the clipboard or menu bar, or set up Safari. Each card will say what was actually kept. Nothing here is sample data.")
+            Text("Drop a link, image, PDF, or text here. Paste into the capture bar, save from the clipboard or menu bar, or use Share / Services. Browser extensions are Coming soon. Each card will say what was actually kept. Nothing here is sample data.")
                 .font(.body)
                 .foregroundStyle(Theme.secondary(scheme))
                 .frame(maxWidth: 460, alignment: .leading)
@@ -759,13 +789,17 @@ struct LibraryShell: View {
                 Button("Import bookmarks") { importFile = true }
                     .frame(minHeight: 44)
             }
-            Button("Set up Safari capture") { model.openSafariExtensionSettings() }
-                .frame(minHeight: 44)
             SettingsLink {
                 Label("Open Settings", systemImage: "gearshape")
             }
             .foregroundStyle(Theme.accent(scheme))
             .labelStyle(.titleAndIcon)
+            Button("Help") {
+                UserDefaults.standard.set("help", forKey: "stowmark.settingsTab")
+                NotificationCenter.default.post(name: .openStowmarkHelp, object: nil)
+                openSettings()
+            }
+            .frame(minHeight: 44)
             Spacer()
         }
         .padding(32)

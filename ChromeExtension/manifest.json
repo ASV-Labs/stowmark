@@ -3,7 +3,7 @@
   "default_locale": "en",
   "name": "Stowmark",
   "description": "Save the current page or selection into Stowmark on this Mac.",
-  "version": "1.0.0-alpha.12",
+  "version": "1.0.0-alpha.13",
   "minimum_chrome_version": "116",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4cSQlrVvDZ5ptGx4FDLtj3CkuHwsx6t8qYZssdL1/HJAf8sVaBZ1sMF4UpkCubdBQEbmnLFPQBOavZs0uhZ+twc0bpyobGcCucBIySxkjeGxiPL0uSr7Nd5e2lYWJsRrDJ4Ovgsk+/0i160VJK/tiw9AXF7ti1poo528InbUqWHkXeT3ODDjNwLR21rTKKjU/BEf6fAT+f7tFyBV1uTG/Y4bxoYHLO5gxWBrjBouk2n/zbo0jueeOaWA/u+Qp5ykDy1EEqOaNWaFNO9KsWcufIVJRBtCZBSBnKhaOvDQmXg8sQAh3B7jSx0ZIzfF0fnBwLEGkuQdRmoiR8OhlAtvIwIDAQAB",
   "icons": {

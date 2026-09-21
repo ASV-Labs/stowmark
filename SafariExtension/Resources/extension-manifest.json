@@ -3,7 +3,7 @@
   "default_locale": "en",
   "name": "Stowmark",
   "description": "Save the current page or selection into Stowmark on this Mac.",
-  "version": "1.0.0-alpha.12",
+  "version": "1.0.0-alpha.13",
   "icons": {
     "48": "images/icon-48.png",
     "96": "images/icon-96.png",

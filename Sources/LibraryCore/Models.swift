@@ -23,6 +23,7 @@ public enum RetentionState: String, Codable, Sendable {
     case copiedImage
     case copiedPDF
     case savedExcerpt
+    case archivedArticle
 
     public var label: String {
         switch self {
@@ -30,6 +31,7 @@ public enum RetentionState: String, Codable, Sendable {
         case .copiedImage: "Image copied"
         case .copiedPDF: "PDF copied"
         case .savedExcerpt: "Excerpt saved"
+        case .archivedArticle: "Article copied"
         }
     }
 }
@@ -111,6 +113,7 @@ public struct SavedItem: Identifiable, Sendable, Equatable {
 
     public var originalAsset: AssetRecord? { assets.first { $0.role == "original" } }
     public var previewAsset: AssetRecord? { assets.first { $0.role == "preview" } }
+    public var articleAsset: AssetRecord? { assets.first { $0.role == "article" } }
 
     public var sourceLabel: String {
         if let sourceDomain, !sourceDomain.isEmpty { return sourceDomain }
@@ -303,13 +306,23 @@ public struct PageMetadata: Sendable, Equatable {
     public var author: String?
     public var imageURL: URL?
     public var openGraphType: String?
+    /// Cleaned HTML for offline reading when enrichment could extract a main article body.
+    public var articleHTML: String?
 
-    public init(title: String?, description: String?, author: String?, imageURL: URL?, openGraphType: String?) {
+    public init(
+        title: String?,
+        description: String?,
+        author: String?,
+        imageURL: URL?,
+        openGraphType: String?,
+        articleHTML: String? = nil
+    ) {
         self.title = title
         self.description = description
         self.author = author
         self.imageURL = imageURL
         self.openGraphType = openGraphType
+        self.articleHTML = articleHTML
     }
 }
 

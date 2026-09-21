@@ -126,8 +126,19 @@ extension LibraryStore {
             return .failed("Not saved. That excerpt is over \(Limits.maxExcerptCharacters) characters.")
         }
         let parsed = URLSafety.captureURL(from: request.pageURL ?? request.targetURL)
-        guard case .success(let url) = parsed else { return parsed.failureResult }
-        let match = URLSafety.matchKey(for: url)
+        let url: URL
+        let domain: String
+        let match: String
+        if case .success(let remote) = parsed {
+            url = remote
+            domain = URLSafety.domain(for: remote)
+            match = URLSafety.matchKey(for: remote)
+        } else {
+            // Dropped / clipboard prose without a page URL — keep it as a local excerpt.
+            url = URL(string: "stowmark://note")!
+            domain = "On this Mac"
+            match = "note:" + String(text.prefix(200)).lowercased()
+        }
         if let existing = try db.query(
             "SELECT id FROM items WHERE match_key = ? AND retention_state = 'savedExcerpt' AND description = ? AND trashed_at IS NULL LIMIT 1",
             [.text(match), .text(text)]
@@ -137,7 +148,7 @@ extension LibraryStore {
         }
         let id = uid()
         let now = stamp(Date())
-        let title = clippedTitle(request.capturedTitle, fallback: URLSafety.domain(for: url))
+        let title = clippedTitle(request.capturedTitle, fallback: domain == "On this Mac" ? String(text.prefix(48)) : domain)
         try db.execute("""
         INSERT INTO items(id, kind, kind_origin, retention_state, original_url, match_key, title, title_origin,
             description, description_origin, note, author, filename, source_domain, favorite, preview_state, trashed_at, created_at, updated_at)
@@ -145,10 +156,10 @@ extension LibraryStore {
         """, [
             .text(id), .text(url.absoluteString), .text(match), .text(title), .text(text),
             request.note.flatMap(emptyToNil).map(SQLBind.text) ?? .null,
-            .text(URLSafety.domain(for: url)), .text(now), .text(now),
+            .text(domain), .text(now), .text(now),
         ])
-        try applyUserTags(request.tags, itemID: id, domain: URLSafety.domain(for: url))
-        try suggest(title: title, description: nil, excerpt: text, itemID: id, domain: URLSafety.domain(for: url))
+        try applyUserTags(request.tags, itemID: id, domain: domain)
+        try suggest(title: title, description: nil, excerpt: text, itemID: id, domain: domain)
         try assignShelf(request.shelfName, itemID: id)
         try writeReceipt(request, itemID: id, status: .saved, retention: .savedExcerpt)
         try writeSearch(id: id)
@@ -161,7 +172,7 @@ extension LibraryStore {
             return .failed("Not saved. That file is over the 100 MB limit.")
         }
         guard let signature = FileSignature.sniff(file.bytes) else {
-            return .failed("Not saved. Stowmark can copy JPEG, PNG, HEIC, and PDF files.")
+            return .failed(FileSignature.unsupportedMessage)
         }
         let staged = try stage(data: file.bytes, folder: "assets/originals")
         let id = uid()
@@ -530,6 +541,10 @@ extension LibraryStore {
     func stage(data: Data, folder: String) throws -> (id: String, relative: String, hash: String) {
         let id = uid()
         let relative = "\(folder)/\(id)"
+        try FileManager.default.createDirectory(
+            at: rootURL.appendingPathComponent(folder, isDirectory: true),
+            withIntermediateDirectories: true
+        )
         let staging = rootURL.appendingPathComponent("staging/\(id)")
         try data.write(to: staging, options: .atomic)
         let hash = SHA256.hash(data: data).compactMap { String(format: "%02x", $0) }.joined()

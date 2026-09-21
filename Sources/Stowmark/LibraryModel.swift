@@ -72,11 +72,15 @@ final class LibraryModel {
     var rememberLastPlace = true
     var defaultSortRaw: String = ResultOrder.recent.rawValue
     private var lastRequestID: UUID?
+    private var lastFailedRequest: CaptureRequest?
     private var lastTrashedItemID: UUID?
     private var watchSource: DispatchSourceFileSystemObject?
     private var watchFD: Int32 = -1
     private var reloadScheduled = false
     private var searchGeneration = 0
+    private var clipboardWatcher: Timer?
+    private var clipboardChangeCount = NSPasteboard.general.changeCount
+    private var readerItemID: UUID?
 
     var defaultSort: ResultOrder {
         get { ResultOrder(rawValue: defaultSortRaw) ?? .recent }
@@ -169,6 +173,7 @@ final class LibraryModel {
             _ = try opened.requeueMissingPreviews()
             reload()
             watchDatabase()
+            refreshClipboardWatcher()
             Task { await enrichPending() }
         } catch {
             store = nil
@@ -488,8 +493,13 @@ final class LibraryModel {
                 captureLink(address, origin: "clipboard")
                 return
             }
+            let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+            if trimmed.count >= 8 {
+                captureExcerpt(pageURL: "stowmark://note", title: String(trimmed.prefix(48)), text: trimmed, origin: "clipboard")
+                return
+            }
         }
-        showFailure("Clipboard does not have a web link or image to save.")
+        showFailure("Clipboard does not have a web link, image, or text excerpt to save.")
         focusCapture()
     }
 
@@ -605,8 +615,11 @@ final class LibraryModel {
             if address.lowercased().hasPrefix("http://") || address.lowercased().hasPrefix("https://") {
                 captureLink(address, origin: "drop")
             } else {
-                showFailure("Not saved. Drop text from a web page so the source is kept, or drop the page link.")
+                let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !trimmed.isEmpty else { return }
+                captureExcerpt(pageURL: "stowmark://note", title: String(trimmed.prefix(48)), text: trimmed, origin: "drop")
             }
+            return
         }
     }
 
@@ -622,6 +635,21 @@ final class LibraryModel {
             runCapture(request, store: store)
             return
         }
+        if let signature = FileSignature.sniff(data), signature != .pdf {
+            let ext: String = {
+                switch signature {
+                case .jpeg: "jpg"
+                case .png: "png"
+                case .heic: "heic"
+                case .gif: "gif"
+                case .webp: "webp"
+                case .pdf: "pdf"
+                }
+            }()
+            captureImageData(data, filename: "Dropped.\(ext)", origin: "drop")
+            return
+        }
+        // TIFF and other convertible bitmaps → PNG
         if let image = NSImage(data: data),
            let tiff = image.tiffRepresentation,
            let bitmap = NSBitmapImageRep(data: tiff),
@@ -629,7 +657,7 @@ final class LibraryModel {
             captureImageData(png, filename: "Dropped.png", origin: "drop")
             return
         }
-        showFailure("Not saved. Stowmark can copy JPEG, PNG, HEIC, and PDF files.")
+        showFailure(FileSignature.unsupportedMessage)
     }
 
     private func droppedURL(_ provider: NSItemProvider, type: UTType) async -> URL? {
@@ -1013,7 +1041,8 @@ final class LibraryModel {
                     itemID: item.id,
                     metadata: preview.metadata,
                     preview: preview.image,
-                    previewFailed: failed
+                    previewFailed: failed,
+                    articleHTML: preview.articleHTML
                 )
             } catch {
                 try? store.failEnrichment(jobID: job.id, errorClass: "network")
@@ -1052,11 +1081,13 @@ final class LibraryModel {
         captureMessage = "Saving…"
         captureFailed = false
         lastRequestID = request.requestID
+        lastFailedRequest = nil
         let result: CaptureResult
         do {
             result = try store.capture(request)
         } catch {
             isSaving = false
+            lastFailedRequest = request
             showFailure(error.localizedDescription)
             CaptureHandshake.write(.failed(error.localizedDescription), requestID: request.requestID)
             return
@@ -1064,6 +1095,9 @@ final class LibraryModel {
         isSaving = false
         captureFailed = result.status == .failed
         captureMessage = result.message
+        if result.status == .failed {
+            lastFailedRequest = request
+        }
         CaptureHandshake.write(result, requestID: request.requestID)
         if result.status != .failed, let clearDraftOnSuccess {
             if captureDraft.trimmingCharacters(in: .whitespacesAndNewlines) == clearDraftOnSuccess.trimmingCharacters(in: .whitespacesAndNewlines) {
@@ -1074,10 +1108,90 @@ final class LibraryModel {
             selectedItemID = id
             if place == .trash { place = .all }
             attachPDFCover(id)
+            if result.retention == .copiedImage {
+                analyzeSavedImage(id)
+            }
         }
         reload()
         if result.status == .saved {
             Task { await enrichPending() }
+        }
+    }
+
+    func retryLastCapture() {
+        guard let request = lastFailedRequest, let store else { return }
+        runCapture(request, store: store)
+    }
+
+    var canRetryCapture: Bool { captureFailed && lastFailedRequest != nil }
+
+    var readingItemID: UUID? {
+        get { readerItemID }
+        set { readerItemID = newValue }
+    }
+
+    func openArticleReader(_ id: UUID) {
+        readerItemID = id
+    }
+
+    func closeArticleReader() {
+        readerItemID = nil
+    }
+
+    func articleHTML(for item: SavedItem) -> String? {
+        guard let store, let asset = item.articleAsset else { return nil }
+        return try? String(contentsOf: asset.fileURL(in: store.rootURL), encoding: .utf8)
+    }
+
+    var clipboardWatcherEnabled: Bool {
+        get { UserDefaults.standard.bool(forKey: "clipboardWatcherEnabled") }
+        set {
+            UserDefaults.standard.set(newValue, forKey: "clipboardWatcherEnabled")
+            refreshClipboardWatcher()
+        }
+    }
+
+    func refreshClipboardWatcher() {
+        clipboardWatcher?.invalidate()
+        clipboardWatcher = nil
+        guard clipboardWatcherEnabled else { return }
+        clipboardChangeCount = NSPasteboard.general.changeCount
+        let timer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: true) { [weak self] _ in
+            Task { @MainActor in
+                self?.pollClipboard()
+            }
+        }
+        RunLoop.main.add(timer, forMode: .common)
+        clipboardWatcher = timer
+    }
+
+    private func pollClipboard() {
+        let board = NSPasteboard.general
+        let count = board.changeCount
+        guard count != clipboardChangeCount else { return }
+        clipboardChangeCount = count
+        // Only auto-save when the pasteboard clearly holds a URL or image — never arbitrary text.
+        if board.canReadObject(forClasses: [NSURL.self], options: nil)
+            || board.data(forType: .png) != nil
+            || board.data(forType: .tiff) != nil {
+            captureFromClipboard()
+        }
+    }
+
+    private func analyzeSavedImage(_ id: UUID) {
+        guard let store, let item = try? store.item(id: id),
+              let asset = item.originalAsset,
+              let data = try? Data(contentsOf: asset.fileURL(in: store.rootURL)) else { return }
+        Task.detached(priority: .utility) {
+            let analysis = LocalImageAnalysis.analyze(data)
+            await MainActor.run {
+                try? store.applyVisualSuggestions(
+                    itemID: id,
+                    colorTags: analysis.colorTags,
+                    ocrText: analysis.ocrText
+                )
+                self.reload()
+            }
         }
     }
 

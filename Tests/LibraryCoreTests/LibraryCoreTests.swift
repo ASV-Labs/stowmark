@@ -17,6 +17,32 @@ final class LibraryCoreTests: XCTestCase {
         try LibraryStore(root: root)
     }
 
+    func testFileSignatureAcceptsGifAndWebP() {
+        let gif = Data([0x47, 0x49, 0x46, 0x38, 0x39, 0x61])
+        let webp = Data([0x52, 0x49, 0x46, 0x46, 0, 0, 0, 0, 0x57, 0x45, 0x42, 0x50])
+        XCTAssertEqual(FileSignature.sniff(gif), .gif)
+        XCTAssertEqual(FileSignature.sniff(webp), .webp)
+        XCTAssertNil(FileSignature.sniff(Data([0x00, 0x01])))
+    }
+
+    func testArticleCleanerBuildsOfflineDocument() {
+        let html = """
+        <html><head><script>evil()</script></head><body>
+        <article>
+        <p>\(String(repeating: "Useful paragraph about daylight and design studios. ", count: 8))</p>
+        <p>\(String(repeating: "Another paragraph with enough characters to keep. ", count: 6))</p>
+        </article></body></html>
+        """
+        let doc = ArticleCleaner.cleanedDocument(
+            from: html,
+            title: "Daylight",
+            baseURL: URL(string: "https://example.com/daylight")!
+        )
+        XCTAssertNotNil(doc)
+        XCTAssertTrue(doc?.contains("Daylight") == true)
+        XCTAssertFalse(doc?.contains("<script") == true)
+    }
+
     func testLegacyApplicationSupportMigrationCopiesWithoutDeletingSource() throws {
         let support = root.appendingPathComponent("Application Support", isDirectory: true)
         let cardfile = support.appendingPathComponent("Cardfile", isDirectory: true)

@@ -9,11 +9,13 @@ enum SitePreview {
     struct Result {
         var metadata: PageMetadata
         var image: Data?
+        var articleHTML: String?
     }
 
     static func fetch(url: URL) async -> Result {
         var metadata = PageMetadata(title: nil, description: nil, author: nil, imageURL: nil, openGraphType: nil)
         var image: Data?
+        var articleHTML: String?
 
         if let link = try? await appleLinkPreview(url) {
             if !ChallengePage.isChallengeTitle(link.title) {
@@ -41,6 +43,11 @@ enum SitePreview {
             if metadata.author == nil { metadata.author = parsed.author }
             if metadata.openGraphType == nil { metadata.openGraphType = parsed.openGraphType }
             metadata.imageURL = parsed.imageURL
+            articleHTML = ArticleCleaner.cleanedDocument(
+                from: html,
+                title: metadata.title ?? parsed.title,
+                baseURL: url
+            )
             if image == nil, let imageURL = parsed.imageURL, !URLSafety.isBlockedFetchTarget(imageURL) {
                 if let bytes = try? await PageFetch.data(from: imageURL, limit: Limits.maxPreviewBytes, referer: url) {
                     image = Thumbnail.makePreview(from: bytes)
@@ -67,7 +74,7 @@ enum SitePreview {
             image = await siteIcon(for: url)
         }
 
-        return Result(metadata: metadata, image: image)
+        return Result(metadata: metadata, image: image, articleHTML: articleHTML)
     }
 
     private struct LinkBits {

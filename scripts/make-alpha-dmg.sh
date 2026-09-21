@@ -115,6 +115,11 @@ SHA-256: \`$SHA\`
 - Safari extension (honest pending/saved), Share sheet, Services, Dock drop, Shortcuts
 - Chrome native messaging host + unpackable Chrome extension (Web Store still pending)
 - Menu bar capture (clipboard save + open library)
+- Opt-in clipboard watcher for links and images
+- Drop/clipboard prose → excerpt; Retry on failed save
+- GIF/WebP image copy (TIFF/SVG still unsupported)
+- On-disk article archive + quiet reader when extractable
+- On-device color tags + OCR text suggestions for images
 - Thumbnail cache, drop of links/images/PDFs, closed-app Safari absorb
 - Continuity: migrates Cardfile / My Mind Application Support + App Groups; accepts \`stowmark://\`, \`cardfile://\`, \`mymind://\`; restores \`.stowmark\`, \`.cardfile\`, \`.mymind\`
 
@@ -122,9 +127,7 @@ SHA-256: \`$SHA\`
 
 - Not notarized — Gatekeeper requires right-click → Open
 - Chrome Web Store listing not published yet (developer-mode load works)
-- GIF / WebP / TIFF / SVG / video not accepted yet
-- No Retry button after a failed save
-- Opt-in clipboard watcher not built
+- TIFF / SVG / video not accepted yet
 - Name not trademark-cleared; preliminary screening only
 
 ## Sign
